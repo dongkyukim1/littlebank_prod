@@ -1,0 +1,389 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.example.android_design_preview"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="21"
+9        android:targetSdkVersion="35" />
+10    <!--
+11         The INTERNET permission is required for development. Specifically,
+12         the Flutter tool needs it to communicate with the running application
+13         to allow setting breakpoints, to provide hot reload, etc.
+14    -->
+15    <uses-permission android:name="android.permission.INTERNET" />
+15-->C:\android_design_preview\android\app\src\debug\AndroidManifest.xml:6:5-66
+15-->C:\android_design_preview\android\app\src\debug\AndroidManifest.xml:6:22-64
+16    <!--
+17     Required to query activities that can process text, see:
+18         https://developer.android.com/training/package-visibility and
+19         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+20
+21         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin.
+22    -->
+23    <queries>
+23-->C:\android_design_preview\android\app\src\main\AndroidManifest.xml:70:5-75:15
+24        <intent>
+24-->C:\android_design_preview\android\app\src\main\AndroidManifest.xml:71:9-74:18
+25            <action android:name="android.intent.action.PROCESS_TEXT" />
+25-->C:\android_design_preview\android\app\src\main\AndroidManifest.xml:72:13-72
+25-->C:\android_design_preview\android\app\src\main\AndroidManifest.xml:72:21-70
+26
+27            <data android:mimeType="text/plain" />
+28        </intent>
+29
+30        <package android:name="com.kakao.talk" />
+30-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:9-50
+30-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:18-47
+31        <package android:name="com.kakao.talk.alpha" />
+31-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:9-56
+31-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:18-53
+32        <package android:name="com.kakao.talk.sandbox" />
+32-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:10:9-58
+32-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:10:18-55
+33        <package android:name="com.kakao.onetalk" />
+33-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:9-53
+33-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:18-50
+34        <package android:name="com.locnall.KimGiSa" />
+34-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:9-55
+34-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:18-52
+35        <package android:name="com.lguplus.navi" />
+35-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:13:9-52
+35-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:13:18-49
+36
+37        <intent>
+37-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:15:9-21:18
+38            <action android:name="android.intent.action.VIEW" />
+38-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-65
+38-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:21-62
+39
+40            <category android:name="android.intent.category.BROWSABLE" />
+40-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-74
+40-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:23-71
+41
+42            <data android:scheme="https" />
+43        </intent> <!-- 네이버앱 : 로그인, 스킴로그인 -->
+44        <package android:name="com.nhn.android.search" /> <!-- 커스텀탭 로그인 -->
+44-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:14:9-58
+44-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:14:18-55
+45        <intent>
+45-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:16:9-18:18
+46            <action android:name="android.support.customtabs.action.CustomTabsService" />
+46-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:17:13-90
+46-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:17:21-87
+47        </intent>
+48
+49        <package android:name="com.android.chrome" />
+49-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:20:9-54
+49-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:20:18-51
+50    </queries>
+51
+52    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+52-->[:flutter_naver_login] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_naver_login-2.0.0\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:5-79
+52-->[:flutter_naver_login] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\flutter_naver_login-2.0.0\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:8:22-76
+53
+54    <permission
+54-->[androidx.core:core:1.13.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\dfc2fbca530748e569b0737b09fa016f\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+55        android:name="com.example.android_design_preview.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+55-->[androidx.core:core:1.13.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\dfc2fbca530748e569b0737b09fa016f\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+56        android:protectionLevel="signature" />
+56-->[androidx.core:core:1.13.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\dfc2fbca530748e569b0737b09fa016f\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+57
+58    <uses-permission android:name="com.example.android_design_preview.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+58-->[androidx.core:core:1.13.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\dfc2fbca530748e569b0737b09fa016f\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+58-->[androidx.core:core:1.13.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\dfc2fbca530748e569b0737b09fa016f\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+59
+60    <application
+61        android:name="android.app.Application"
+62        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+62-->[androidx.core:core:1.13.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\dfc2fbca530748e569b0737b09fa016f\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
+63        android:debuggable="true"
+64        android:extractNativeLibs="true"
+65        android:icon="@mipmap/ic_launcher"
+66        android:label="littlebank" >
+67        <activity
+68            android:name="com.example.android_design_preview.MainActivity"
+69            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+70            android:exported="true"
+71            android:hardwareAccelerated="true"
+72            android:launchMode="singleTop"
+73            android:taskAffinity=""
+74            android:theme="@style/LaunchTheme"
+75            android:windowSoftInputMode="adjustResize" >
+76
+77            <!--
+78                 Specifies an Android theme to apply to this Activity as soon as
+79                 the Android process has started. This theme is visible to the user
+80                 while the Flutter UI initializes. After that, this theme continues
+81                 to determine the Window background behind the Flutter UI.
+82            -->
+83            <meta-data
+84                android:name="io.flutter.embedding.android.NormalTheme"
+85                android:resource="@style/NormalTheme" />
+86
+87            <intent-filter>
+88                <action android:name="android.intent.action.MAIN" />
+89
+90                <category android:name="android.intent.category.LAUNCHER" />
+91            </intent-filter>
+92        </activity>
+93
+94        <!-- 카카오 로그인 설정 -->
+95        <activity
+96            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
+97            android:exported="true"
+98            android:launchMode="singleTask"
+98-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:39:13-44
+99            android:theme="@style/TransparentCompat" >
+99-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:40:13-53
+100            <intent-filter android:label="flutter_web_auth" >
+101                <action android:name="android.intent.action.VIEW" />
+101-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-65
+101-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:21-62
+102
+103                <category android:name="android.intent.category.DEFAULT" />
+103-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:53:17-76
+103-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:53:27-73
+104                <category android:name="android.intent.category.BROWSABLE" />
+104-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-74
+104-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:23-71
+105
+106                <!-- 카카오 로그인 Redirect URI -->
+107                <data
+108                    android:host="oauth"
+109                    android:scheme="kakaodaf99b63927c19ded77784a8b960b182" />
+110            </intent-filter>
+111        </activity>
+112
+113        <!-- 네이버 로그인 설정 -->
+114        <activity
+115            android:name="com.navercorp.nid.oauth.NidOAuthBridgeActivity"
+116            android:configChanges="orientation|screenSize"
+117            android:exported="true"
+118            android:theme="@style/Theme.AppCompat.Transparent.NoActionBar" >
+118-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:33:13-75
+119            <intent-filter>
+120                <action android:name="android.intent.action.VIEW" />
+120-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-65
+120-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:21-62
+121
+122                <category android:name="android.intent.category.DEFAULT" />
+122-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:53:17-76
+122-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:53:27-73
+123                <category android:name="android.intent.category.BROWSABLE" />
+123-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-74
+123-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:23-71
+124
+125                <data
+126                    android:host="authorization"
+127                    android:scheme="xDoTbCTjZYNhgSkEK1K7" />
+128            </intent-filter>
+129        </activity>
+130
+131        <!--
+132             Don't delete the meta-data below.
+133             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java
+134        -->
+135        <meta-data
+136            android:name="flutterEmbedding"
+137            android:value="2" />
+138
+139        <provider
+139-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:9:9-17:20
+140            android:name="io.flutter.plugins.imagepicker.ImagePickerFileProvider"
+140-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:10:13-82
+141            android:authorities="com.example.android_design_preview.flutter.image_provider"
+141-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:11:13-74
+142            android:exported="false"
+142-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:12:13-37
+143            android:grantUriPermissions="true" >
+143-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:13:13-47
+144            <meta-data
+144-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:14:13-16:75
+145                android:name="android.support.FILE_PROVIDER_PATHS"
+145-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:15:17-67
+146                android:resource="@xml/flutter_image_picker_file_paths" />
+146-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:17-72
+147        </provider> <!-- Trigger Google Play services to install the backported photo picker module. -->
+148        <service
+148-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:19:9-31:19
+149            android:name="com.google.android.gms.metadata.ModuleDependencies"
+149-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:20:13-78
+150            android:enabled="false"
+150-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:21:13-36
+151            android:exported="false" >
+151-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:22:13-37
+152            <intent-filter>
+152-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:24:13-26:29
+153                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
+153-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:25:17-94
+153-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:25:25-91
+154            </intent-filter>
+155
+156            <meta-data
+156-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:28:13-30:36
+157                android:name="photopicker_activity:0:required"
+157-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:29:17-63
+158                android:value="" />
+158-->[:image_picker_android] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\image_picker_android-0.8.12+22\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:30:17-33
+159        </service>
+160
+161        <activity
+161-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:25:9-30:56
+162            android:name="com.kakao.sdk.flutter.TalkAuthCodeActivity"
+162-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:26:13-70
+163            android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
+163-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:27:13-81
+164            android:exported="false"
+164-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:28:13-37
+165            android:launchMode="singleTask"
+165-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:29:13-44
+166            android:theme="@style/TransparentCompat" />
+166-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:30:13-53
+167        <activity
+167-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:31:9-35:56
+168            android:name="com.kakao.sdk.flutter.CustomTabsActivity"
+168-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:32:13-68
+169            android:exported="true"
+169-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:33:13-36
+170            android:launchMode="singleTask"
+170-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:34:13-44
+171            android:theme="@style/TransparentCompat" />
+171-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:35:13-53
+172        <activity
+172-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:41:9-45:56
+173            android:name="com.kakao.sdk.flutter.FollowChannelHandlerActivity"
+173-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:42:13-78
+174            android:exported="true"
+174-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:43:13-36
+175            android:launchMode="singleTask"
+175-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:44:13-44
+176            android:theme="@style/TransparentCompat" />
+176-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:45:13-53
+177        <activity
+177-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:46:9-50:56
+178            android:name="com.kakao.sdk.flutter.AppsHandlerActivity"
+178-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:47:13-69
+179            android:exported="true"
+179-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:48:13-36
+180            android:launchMode="singleTask"
+180-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:49:13-44
+181            android:theme="@style/TransparentCompat" /> <!-- <activity -->
+181-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:50:13-53
+182        <!-- android:name="com.navercorp.nid.oauth.activity.NidOAuthWebViewActivity" -->
+183        <!-- android:configChanges="orientation|screenSize" -->
+184        <!-- android:screenOrientation="behind" -->
+185        <!-- android:label="OAuth2.0 by WebView" -->
+186        <!-- android:theme="@style/Theme.AppCompat.Transparent.NoActionBar"/> -->
+187        <activity
+187-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:42:9-61:20
+188            android:name="com.navercorp.nid.oauth.activity.NidOAuthCustomTabActivity"
+188-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:43:13-86
+189            android:configChanges="orientation|screenSize"
+189-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:44:13-59
+190            android:exported="true"
+190-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:45:13-36
+191            android:label="OAuth2.0 by Custom tabs"
+191-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:46:13-52
+192            android:launchMode="singleTask"
+192-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:47:13-44
+193            android:screenOrientation="behind"
+193-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:48:13-47
+194            android:theme="@style/Theme.AppCompat.NoActionBar" >
+194-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:49:13-63
+195            <intent-filter>
+195-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:50:13-60:29
+196                <action android:name="android.intent.action.VIEW" />
+196-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:13-65
+196-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:16:21-62
+197
+198                <category android:name="android.intent.category.DEFAULT" />
+198-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:53:17-76
+198-->[com.navercorp.nid:oauth:5.10.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\91ba079f2ba2515c2cf963afc01e8c76\transformed\jetified-oauth-5.10.0\AndroidManifest.xml:53:27-73
+199                <category android:name="android.intent.category.BROWSABLE" />
+199-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:13-74
+199-->[:kakao_flutter_sdk_common] C:\Users\dongkyu\AppData\Local\Pub\Cache\hosted\pub.dev\kakao_flutter_sdk_common-1.9.7+3\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:18:23-71
+200                <!-- Intent URL 에서 로그인 액티비티를 실행하기 위해 설정 -->
+201                <data
+202                    android:host="authorize"
+203                    android:path="/"
+204                    android:scheme="naver3rdpartylogin" />
+205            </intent-filter>
+206        </activity>
+207
+208        <uses-library
+208-->[androidx.window:window:1.2.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\aed2861b2b6894f7067df3f3f96b791f\transformed\jetified-window-1.2.0\AndroidManifest.xml:23:9-25:40
+209            android:name="androidx.window.extensions"
+209-->[androidx.window:window:1.2.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\aed2861b2b6894f7067df3f3f96b791f\transformed\jetified-window-1.2.0\AndroidManifest.xml:24:13-54
+210            android:required="false" />
+210-->[androidx.window:window:1.2.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\aed2861b2b6894f7067df3f3f96b791f\transformed\jetified-window-1.2.0\AndroidManifest.xml:25:13-37
+211        <uses-library
+211-->[androidx.window:window:1.2.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\aed2861b2b6894f7067df3f3f96b791f\transformed\jetified-window-1.2.0\AndroidManifest.xml:26:9-28:40
+212            android:name="androidx.window.sidecar"
+212-->[androidx.window:window:1.2.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\aed2861b2b6894f7067df3f3f96b791f\transformed\jetified-window-1.2.0\AndroidManifest.xml:27:13-51
+213            android:required="false" />
+213-->[androidx.window:window:1.2.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\aed2861b2b6894f7067df3f3f96b791f\transformed\jetified-window-1.2.0\AndroidManifest.xml:28:13-37
+214
+215        <provider
+215-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\bb10008c4b33ee9597583412a41828ed\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:24:9-32:20
+216            android:name="androidx.startup.InitializationProvider"
+216-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\bb10008c4b33ee9597583412a41828ed\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:25:13-67
+217            android:authorities="com.example.android_design_preview.androidx-startup"
+217-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\bb10008c4b33ee9597583412a41828ed\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:26:13-68
+218            android:exported="false" >
+218-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\bb10008c4b33ee9597583412a41828ed\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:27:13-37
+219            <meta-data
+219-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\bb10008c4b33ee9597583412a41828ed\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+220                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+220-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\bb10008c4b33ee9597583412a41828ed\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+221                android:value="androidx.startup" />
+221-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\bb10008c4b33ee9597583412a41828ed\transformed\jetified-lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+222            <meta-data
+222-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+223                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+223-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+224                android:value="androidx.startup" />
+224-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+225        </provider>
+226
+227        <receiver
+227-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+228            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+228-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+229            android:directBootAware="false"
+229-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+230            android:enabled="true"
+230-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+231            android:exported="true"
+231-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+232            android:permission="android.permission.DUMP" >
+232-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+233            <intent-filter>
+233-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+234                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+234-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+234-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+235            </intent-filter>
+236            <intent-filter>
+236-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+237                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+237-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+237-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+238            </intent-filter>
+239            <intent-filter>
+239-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+240                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+240-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+240-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+241            </intent-filter>
+242            <intent-filter>
+242-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+243                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+243-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+243-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\dongkyu\.gradle\caches\8.10.2\transforms\5aacd87baa6feaa7bece87b01e7698f0\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+244            </intent-filter>
+245        </receiver>
+246    </application>
+247
+248</manifest>

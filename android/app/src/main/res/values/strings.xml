@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">littlebank</string>
+    
+    <!-- 네이버 로그인 설정 값 -->
+    <string name="naver_client_id">xDoTbCTjZYNhgSkEK1K7</string>
+    <string name="naver_client_secret">RETtyp4ogI</string>
+    <string name="naver_client_name">littlebank</string>
+    <string name="naver_login_scheme">naverxDoTbCTjZYNhgSkEK1K7</string>
+</resources> 
