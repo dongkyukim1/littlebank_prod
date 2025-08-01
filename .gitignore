@@ -89,6 +89,16 @@ android/app/build/
 android/build/
 android/.gradle/
 
+# 빌드 아티팩트 (큰 파일들)
+android/app/build/intermediates/
+android/app/build/outputs/
+**/build/intermediates/
+**/build/outputs/
+*.apk
+*.aab
+*.ipa
+kernel_blob.bin
+
 # 보안 관련 파일들
 *.jks
 *.keystore
