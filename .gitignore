@@ -88,3 +88,30 @@ GoogleService-Info.plist
 android/app/build/
 android/build/
 android/.gradle/
+
+# 보안 관련 파일들
+*.jks
+*.keystore
+android/app/upload-keystore.jks
+android/app/key.properties
+android/key.properties
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+.secrets/
+secrets/
+*.secrets
+*.key
+*.pem
+.env.*
+!.env.example
+
+# 개인정보 및 민감한 데이터
+**/keystore/**
+**/keys/**
+**/certificates/**
+firebase_app_id_file.json
+ios/firebase_app_id_file.json
+
+# 앱 서명 키
+android/app/keystore/
+ios/certificates/
