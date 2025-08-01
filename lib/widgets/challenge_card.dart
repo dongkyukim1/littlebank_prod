@@ -1,306 +1,252 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../screens/child/challenge/challenge_detail_screen.dart';
 
-class ChallengeSection extends StatelessWidget {
-  const ChallengeSection({super.key});
+class ChallengeCard extends StatelessWidget {
+  final int id;
+  final String periodType;
+  final String title;
+  final String participants;
+  final String period;
+  final String time;
+  final String? startDate;
+  final String? endDate;
+  final String? startTime;
+  final int? totalStudyTime;
+  final int? reward;
+  final VoidCallback? onTap;
+
+  const ChallengeCard({
+    super.key,
+    this.id = 0,
+    required this.periodType,
+    required this.title,
+    required this.participants,
+    required this.period,
+    required this.time,
+    this.startDate,
+    this.endDate,
+    this.startTime,
+    this.totalStudyTime,
+    this.reward,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.blue.shade50),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.trending_up, color: AppColors.accentColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '많은 사람들이 보고있는 챌린지',
-                      style: TextStyle(
-                        fontSize: 16, 
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.accentColor,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '더보기',
-                          style: TextStyle(
-                            color: Colors.grey.shade800, 
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 12,
-                          color: Colors.grey.shade800,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.monetization_on, color: AppColors.moneyColor, size: 16),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '34,000원 더 모을 수 있어요',
-                        style: TextStyle(
-                          fontSize: 14, 
-                          color: AppColors.moneyColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildFilterChip('전체', isSelected: true),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('요일별'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('과목별'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildChallengeCard(
-                      periodType: '요일별',
-                      title: '일주일동안 매일 수학 3시간',
-                      participants: '30/40',
-                      period: '3.20 - 3.27',
-                      time: '매일 3시간',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildChallengeCard(
-                      periodType: '요일별',
-                      title: '일주일동안 매일 수학 3시',
-                      participants: '30/40',
-                      period: '3.20 - 3.27',
-                      time: '매일 3시간',
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    // 시간 값이 매일 3시간 또는 매일 30분이면 설정 가능으로 표시
+    final String timeValue =
+        time == '매일 3시간' || time == '매일 30분' ? '설정 가능' : time;
 
-  Widget _buildFilterChip(String label, {bool isSelected = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.accentColor : Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: isSelected
-            ? [
-                BoxShadow(
-                  color: Colors.blue.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
+      width: 210,
+      padding: const EdgeInsets.all(16),
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.black87,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChallengeCard({
-    required String periodType,
-    required String title,
-    required String participants,
-    required String period,
-    required String time,
-  }) {
-    return Card(
-      elevation: 2,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Text(
-                  periodType,
-                  style: TextStyle(
-                    fontSize: 12, 
-                    color: Colors.grey.shade800,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 타입 라벨
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: ShapeDecoration(
+              color: const Color(0xFFEFF2F6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-              const SizedBox(height: 12),
-              Text(
+            ),
+            child: Text(
+              periodType,
+              style: const TextStyle(
+                color: Color(0xFF5D9EFF),
+                fontSize: 11,
+                fontFamily: 'Pretendard-Light',
+                letterSpacing: -0.24,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // 제목 영역 - 한 줄로 제한, 위치 조정
+          SizedBox(
+            height: 30,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16, 
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Color(0xFF353535),
+                  fontSize: 17, // 15px에서 17px로 2px 키움
+                  fontFamily: 'Pretendard-Bold',
+                  height: 1.2,
+                  letterSpacing: -0.5,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Text(
-                    '참여 인원',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Text(
-                      participants,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Text(
-                    '기한',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const Spacer(),
-                  Text(
-                    period,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Text(
-                    '시간',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const Spacer(),
-                  Text(
-                    time,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.accentColor,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  '참여하기',
+            ),
+          ),
+          const SizedBox(height: 30), // 20px에서 30px로 간격 더 늘림
+
+          // 정보 영역 - 일관된 간격으로 수정
+          // 참여 인원
+          Row(
+            mainAxisSize: MainAxisSize.max, // min에서 max로 변경
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(
+                width: 65,
+                child: Text(
+                  '참여 인원',
                   style: TextStyle(
-                    fontSize: 14, 
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF999999),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Light',
                   ),
+                ),
+              ),
+              const SizedBox(width: 12), // 일관된 간격 추가
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${participants.split('/')[0]}/',
+                        style: const TextStyle(
+                          color: Color(0xFF89DA8D),
+                          fontSize: 14,
+                          fontFamily: 'Pretendard-Medium',
+                        ),
+                      ),
+                      TextSpan(
+                        text: participants.split('/')[1],
+                        style: const TextStyle(
+                          color: Color(0xFF4A4A4A),
+                          fontSize: 14,
+                          fontFamily: 'Pretendard-Medium',
+                        ),
+                      ),
+                    ],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.left,
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 6),
+          // 기한
+          Row(
+            mainAxisSize: MainAxisSize.max, // min에서 max로 변경
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(
+                width: 65,
+                child: Text(
+                  '기한',
+                  style: TextStyle(
+                    color: Color(0xFF999999),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Light',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12), // 일관된 간격 추가
+              Expanded(
+                child: Text(
+                  period,
+                  style: const TextStyle(
+                    color: Color(0xFF4A4A4A),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Medium',
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.left,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // 시간
+          Row(
+            mainAxisSize: MainAxisSize.max, // min에서 max로 변경
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(
+                width: 65,
+                child: Text(
+                  '시간',
+                  style: TextStyle(
+                    color: Color(0xFF999999),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Light',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12), // 일관된 간격 추가
+              Expanded(
+                child: Text(
+                  timeValue,
+                  style: const TextStyle(
+                    color: Color(0xFF4A4A4A),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Medium',
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.left,
+                ),
+              ),
+            ],
+          ),
+
+          const Spacer(), // 남은 공간 채우기
+          // 참여하기 버튼
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton(
+              onPressed: () {
+                // 챌린지 상세 화면으로 이동
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChallengeDetailScreen(
+                      id: id,
+                      type: periodType,
+                      title: title,
+                      participants: participants,
+                      period: period,
+                      time: time,
+                      startDate: startDate ?? '',
+                      endDate: endDate ?? '',
+                      startTime: startTime ?? '09:00:00',
+                      totalStudyTime: totalStudyTime ?? 0,
+                      reward: reward ?? 0,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5D9EFF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              child: const Text(
+                '참여하기',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'Pretendard-Medium',
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
-} 
+}

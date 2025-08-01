@@ -3,8 +3,7 @@ import 'theme/app_theme.dart';
 import 'screens/child/mission_screen.dart';
 import 'screens/child/chat_list_screen.dart';
 import 'screens/child/feed_screen.dart';
-import 'widgets/mission_card.dart';
-
+import 'services/global_notification_service.dart';
 class HomeScreen extends StatefulWidget {
   final String userType;
 
@@ -18,7 +17,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   late String _username;
   late double _allowance;
-  bool _isMissionCardExpanded = false;
 
   @override
   void initState() {
@@ -36,6 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _username = "리틀뱅크 선생님";
       _allowance = 0;
     }
+
+    // 화면이 로드된 후 알림 확인
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      GlobalNotificationService.instance.checkAndShowAllNotifications(context);
+    });
   }
 
   @override
@@ -117,40 +120,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeTab() {
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAllowanceCard(),
-              const SizedBox(height: 16),
-              _buildGoalProgressCard(),
-              const SizedBox(height: 16),
-              _buildTopUsersCard(),
-              const SizedBox(height: 16),
-              _buildWeeklyGoalCard(),
-              const SizedBox(height: 16),
-              _buildChallengeSection(),
-              if (_isMissionCardExpanded)
-                SizedBox(height: MediaQuery.of(context).size.height * 0.4),
-            ],
-          ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: MissionCard(
-            onExpandChanged: (isExpanded) {
-              setState(() {
-                _isMissionCardExpanded = isExpanded;
-              });
-            },
-          ),
-        ),
-      ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAllowanceCard(),
+          const SizedBox(height: 16),
+          _buildGoalProgressCard(),
+          const SizedBox(height: 16),
+          _buildTopUsersCard(),
+          const SizedBox(height: 16),
+          _buildWeeklyGoalCard(),
+          const SizedBox(height: 16),
+          _buildChallengeSection(),
+        ],
+      ),
     );
   }
 

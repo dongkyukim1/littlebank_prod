@@ -1,14 +1,32 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import '../child/child_home_wrapper.dart';
+import '../parent/parent_home_wrapper.dart';
+import 'splash/splash_manager.dart';
 
 class ProfileSelectionScreen extends StatefulWidget {
   final String userId;
-  final String jumin; // 주민번호
+  final String jumin; // 생년월일 6자리
   final String? password;
   final String? name;
   final String? phone;
   final bool? marketingAgreed;
+
+  // 계좌 정보 (선택적)
+  final String? bankName;
+  final String? bankCode;
+  final String? bankAccount;
+  final String? accountPin;
+
+  // 약관 동의 필드들 추가
+  final bool? agreedTermsOfService;
+  final bool? agreedPrivacyCollection;
+  final bool? agreedMinorGuardian;
+  final bool? agreedElectronicFinance;
+  final bool? agreedRewardGuardian;
+  final bool? agreedThirdPartySharing;
+  final bool? agreedDataProcessingDelegation;
 
   const ProfileSelectionScreen({
     super.key,
@@ -18,6 +36,18 @@ class ProfileSelectionScreen extends StatefulWidget {
     this.name,
     this.phone,
     this.marketingAgreed,
+    this.bankName,
+    this.bankCode,
+    this.bankAccount,
+    this.accountPin,
+    // 약관 동의 필드들 추가
+    this.agreedTermsOfService,
+    this.agreedPrivacyCollection,
+    this.agreedMinorGuardian,
+    this.agreedElectronicFinance,
+    this.agreedRewardGuardian,
+    this.agreedThirdPartySharing,
+    this.agreedDataProcessingDelegation,
   });
 
   @override
@@ -72,81 +102,175 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
     // 최종 확인 다이얼로그
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder:
-          (BuildContext dialogContext) => AlertDialog(
-            title: const Text('프로필 선택 확인'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '선택하신 프로필로 계정이 생성됩니다.',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  '프로필은 추후 변경이 불가능하므로 신중하게 선택해주세요.',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFEEEEEE)),
+          (BuildContext dialogContext) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
                   ),
-                  child: Row(
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 프로필 아이콘
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3A88F4).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _selectedProfile == 'student'
+                          ? Icons.school
+                          : _selectedProfile == 'parent'
+                          ? Icons.family_restroom
+                          : Icons.assignment_ind,
+                      color: const Color(0xFF3A88F4),
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 제목
+                  Text(
+                    '프로필 선택 확인',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'Pretendard-Bold',
+                      color: const Color(0xFF202020),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 선택된 프로필 정보
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE4ECF8),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF3A88F4),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          _selectedProfile == 'student'
+                              ? '학생 프로필'
+                              : _selectedProfile == 'parent'
+                              ? '부모님 프로필'
+                              : '선생님 프로필',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Pretendard-Bold',
+                            color: const Color(0xFF3A88F4),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '선택하신 프로필로 계정이 생성됩니다.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'Pretendard-Light',
+                            color: const Color(0xFF8490A3),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 경고 메시지
+                  Text(
+                    '프로필은 추후 변경이 불가능하므로\n신중하게 선택해주세요.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Pretendard-Light',
+                      color: const Color(0xFF8490A3),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 버튼들
+                  Row(
                     children: [
-                      Icon(
-                        _selectedProfile == 'student'
-                            ? Icons.school
-                            : _selectedProfile == 'parent'
-                            ? Icons.family_restroom
-                            : Icons.assignment_ind,
-                        color: AppTheme.primaryColor,
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                            },
+                            style: TextButton.styleFrom(
+                              backgroundColor: const Color(0xFFF5F5F5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              '다시 선택',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Pretendard-Medium',
+                                color: const Color(0xFF8490A3),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        _selectedProfile == 'student'
-                            ? '학생'
-                            : _selectedProfile == 'parent'
-                            ? '부모님'
-                            : '선생님',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                              _showLoadingDialog();
+                              _processSignup(role);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3A88F4),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              '확인',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Pretendard-Medium',
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(dialogContext); // 다이얼로그 닫기
-                },
-                child: const Text('다시 선택하기'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // 다이얼로그 닫고
-                  Navigator.pop(dialogContext);
-
-                  // 로딩 표시 (선택사항)
-                  _showLoadingDialog();
-
-                  // 회원가입 진행
-                  _processSignup(role);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                ),
-                child: const Text('확인'),
-              ),
-            ],
           ),
     );
   }
@@ -225,6 +349,146 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
     );
   }
 
+  // 회원가입 완료 모달 표시
+  void _showSignupCompleteModal() {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 성공 아이콘 - 애니메이션 효과가 있는 체크 아이콘
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF4CAF50),
+                        const Color(0xFF66BB6A),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4CAF50).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 40),
+                ),
+                const SizedBox(height: 24),
+
+                // 메인 제목
+                const Text(
+                  '회원가입이 완료되었습니다!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Pretendard-Bold',
+                    color: Color(0xFF1A1A1A),
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+
+                // 서브 메시지
+                const Text(
+                  '설명서를 보고\n2주 무료 코드를 받아가세요',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'Pretendard-Regular',
+                    color: Color(0xFF666666),
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+
+                // 코드 박스
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 20,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFE0E0E0),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.card_giftcard,
+                        color: const Color(0xFF4CAF50),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'littlebank',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Pretendard-SemiBold',
+                          color: Color(0xFF4CAF50),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 안내 텍스트
+                const Text(
+                  '잠시 후 자동으로 이동됩니다',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'Pretendard-Regular',
+                    color: Color(0xFF999999),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // 회원가입 처리 로직을 별도 메서드로 분리
   Future<void> _processSignup(String role) async {
     // 회원가입 API 호출
@@ -234,7 +498,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
       try {
         _updateLoadingMessage('회원가입 요청 처리 중...');
         print(
-          '회원가입 API 요청: 이메일=${widget.userId}, 이름=${widget.name}, 전화번호=${widget.phone}, 역할=$role',
+          '회원가입 API 요청: 이메일=${widget.userId}, 이름=${widget.name}, 전화번호=${widget.phone}, 생년월일=${widget.jumin}, 역할=$role',
         );
 
         // API 호출
@@ -244,24 +508,31 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
           name: widget.name!,
           phone: widget.phone!,
           rrn: widget.jumin.substring(0, 6),
-          bankName: "",
-          bankAccount: "",
-          bankCode: "",
-          profileImageUrl: "", // 프로필 이미지는 로그인 후 설정
+          bankName: widget.bankName ?? "",
+          bankAccount: widget.bankAccount ?? "",
+          bankCode: widget.bankCode ?? "",
+          accountPin:
+              widget.accountPin != null && widget.accountPin!.isNotEmpty
+                  ? widget.accountPin
+                  : null,
           role: role,
+          // 약관 동의 정보 추가
+          agreedTermsOfService: widget.agreedTermsOfService ?? true,
+          agreedPrivacyCollection: widget.agreedPrivacyCollection ?? true,
+          agreedMinorGuardian: widget.agreedMinorGuardian,
+          agreedElectronicFinance: widget.agreedElectronicFinance ?? true,
+          agreedRewardGuardian: widget.agreedRewardGuardian,
+          agreedThirdPartySharing: widget.agreedThirdPartySharing ?? false,
+          agreedDataProcessingDelegation: widget.agreedDataProcessingDelegation ?? false,
+          agreedMarketing: widget.marketingAgreed ?? false,
         );
 
         print('회원가입 성공: $result');
 
         if (!mounted) return;
 
-        // 로딩 다이얼로그가 표시된 경우 닫기
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
-
-        // 회원가입 완료 다이얼로그 표시
-        _showSignupSuccessDialog();
+        // 회원가입 성공 후 바로 스플래시로 이동 (자동 로그인은 스플래시 후에)
+        await _navigateToSplash(role);
       } catch (error) {
         print('회원가입 오류 발생: $error');
 
@@ -278,10 +549,10 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
         // 201 응답은 실제로 성공이므로 처리
         if (errorMsg.contains("201") &&
             (errorMsg.contains("userid") || errorMsg.contains("email"))) {
-          print('201 응답은 성공입니다. 회원가입 완료 메시지 표시');
+          print('201 응답은 성공입니다. 회원가입 완료 후 스플래시 이동');
 
-          // 회원가입 완료 다이얼로그 표시
-          _showSignupSuccessDialog();
+          // 회원가입 성공 후 바로 스플래시로 이동 (자동 로그인은 스플래시 후에)
+          await _navigateToSplash(role);
         }
         // 이메일 중복 오류 처리
         else if (errorMsg.contains("u001") ||
@@ -319,6 +590,93 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
       }
 
       _showErrorModal('정보 부족', '회원가입에 필요한 정보가 부족합니다.\n이전 단계부터 다시 진행해주세요.');
+    }
+  }
+
+  // 회원가입 성공 후 바로 스플래시로 이동
+  Future<void> _navigateToSplash(String role) async {
+    try {
+      print('🚀 회원가입 완료 후 스플래시 이동 시작 - 역할: $role');
+      print('🔍 현재 mounted 상태: $mounted');
+      print('🔍 현재 context valid: ${context.mounted}');
+
+      // 먼저 해당 역할의 스플래시 상태를 초기화 (회원가입 후 반드시 스플래시 보여주기)
+      await SplashManager.resetUserStatus(widget.userId);
+      print('🔄 스플래시 상태 초기화 완료');
+
+      _showSignupCompleteModal();
+      print('📱 회원가입 완료 모달 표시 완료');
+
+      // 잠시 대기 (사용자에게 완료 메시지 보여주기)
+      await Future.delayed(const Duration(milliseconds: 3000));
+      print('⏰ 1.5초 대기 완료');
+
+      if (!mounted) {
+        print('❌ mounted가 false가 되어 중단됨');
+        return;
+      }
+
+      // 로딩 다이얼로그 닫기
+      if (Navigator.of(context).canPop()) {
+        print('🔄 로딩 다이얼로그 닫기');
+        Navigator.of(context).pop();
+      }
+
+      print('🎬 스플래시 화면으로 이동 준비 - 역할: $role');
+
+      // 역할에 따라 적절한 스플래시 화면으로 이동 (회원가입 정보 포함)
+      Widget homeScreen;
+      if (role == 'CHILD') {
+        homeScreen = ChildHomeWrapper(
+          userId: widget.userId,
+          signupEmail: widget.userId,
+          signupPassword: widget.password,
+        );
+        print('👶 아이용 스플래시 화면 위젯 생성 완료');
+      } else {
+        homeScreen = ParentHomeWrapper(
+          userId: widget.userId,
+          signupEmail: widget.userId,
+          signupPassword: widget.password,
+        );
+        print('👨‍👩‍👧‍👦 부모용 스플래시 화면 위젯 생성 완료');
+      }
+
+      print('🚪 네비게이션 시작 - 모든 이전 화면 제거');
+
+      // 모든 화면 스택을 정리하고 스플래시 화면으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) {
+            print('🏗️ MaterialPageRoute builder 호출됨');
+            return homeScreen;
+          },
+        ),
+        (route) {
+          print('🗑️ 기존 route 제거 중: ${route.settings.name}');
+          return false;
+        },
+      );
+
+      print('✅ 스플래시 화면으로 네비게이션 완료');
+    } catch (e, stackTrace) {
+      print('❌ 스플래시 이동 실패: $e');
+      print('📊 스택 트레이스: $stackTrace');
+
+      if (!mounted) {
+        print('❌ 예외 처리 중 mounted가 false');
+        return;
+      }
+
+      // 로딩 다이얼로그 닫기
+      if (Navigator.of(context).canPop()) {
+        print('🔄 예외 처리 중 로딩 다이얼로그 닫기');
+        Navigator.of(context).pop();
+      }
+
+      // 오류 시 성공 다이얼로그 표시
+      print('🔄 오류로 인한 수동 로그인 안내 다이얼로그 표시');
+      _showSignupSuccessDialog();
     }
   }
 
@@ -378,30 +736,36 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                   // 메시지
                   Column(
                     children: [
-                      const Text(
-                        '회원가입이 완료되었습니다.',
-                        style: TextStyle(
+                      Text(
+                        widget.bankName != null && widget.bankName!.isNotEmpty
+                            ? '계좌 연결과 함께\n회원가입이 완료되었습니다!'
+                            : '회원가입이 완료되었습니다!',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.black87,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        '${widget.userId} 계정으로 로그인해주세요.',
+                      const Text(
+                        '자동 로그인 처리 중 문제가 발생했습니다.\n로그인 화면에서 직접 로그인해주세요.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.black54),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        '로그인 후 프로필 사진을 등록할 수 있습니다.',
+                      Text(
+                        widget.bankName != null && widget.bankName!.isNotEmpty
+                            ? '연결된 계좌: ${widget.bankName}'
+                            : '로그인 후 스플래시 화면을 보실 수 있습니다.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.blue,
+                          color:
+                              widget.bankName != null &&
+                                      widget.bankName!.isNotEmpty
+                                  ? Colors.green
+                                  : Colors.blue,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -625,74 +989,300 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
     );
   }
 
-  // 단계 네비게이션 위젯
-  Widget _buildStepIndicator() {
-    return Container(
-      padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-      child: Row(
-        children: [
-          // 뒤로가기 버튼
-          Padding(
-            padding: const EdgeInsets.only(left: 16.0, right: 4.0),
-            child: IconButton(
-              icon: const Icon(
-                Icons.chevron_left,
-                color: Colors.grey,
-                size: 32,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
+  @override
+  Widget build(BuildContext context) {
+    // 생년월일 기반으로 학생 여부 확인
+    final bool isStudent = _isStudent();
 
-          // 중앙 영역 (프로그레스 바 + 점)
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 프로그레스 바
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.2,
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-
-                // 점 3개
-                const SizedBox(width: 12),
-                Row(
-                  children: List.generate(
-                    3,
-                    (index) => Container(
-                      width: 6,
-                      height: 6,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        shape: BoxShape.circle,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F7),
+      body: Container(
+        width: 390,
+        height: 885,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(color: const Color(0xFFF7F7F7)),
+        child: Stack(
+          children: [
+            // 상단 앱바
+            Positioned(
+              left: 0,
+              top: 44,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  width: double.infinity,
+                  height: 56,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 16,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            child: Image.asset(
+                              'assets/icons/my/뒤로가기.png',
+                              width: 24,
+                              height: 24,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 19,
+                        child: Center(
+                          child: Text(
+                            '프로필 선택',
+                            style: TextStyle(
+                              color: const Color(0xFF202020),
+                              fontSize: 16,
+                              fontFamily: 'Pretendard-Bold',
+                              letterSpacing: -0.32,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
 
-          // 우측 여백을 위한 빈 공간
-          const SizedBox(width: 48),
-        ],
+            // 제목과 설명
+            Positioned(
+              left: 16,
+              top: 160,
+              right: 16,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '프로필을 선택해 주세요',
+                    style: TextStyle(
+                      color: const Color(0xFF202020),
+                      fontSize: 20,
+                      fontFamily: 'Pretendard-Bold',
+                      height: 1.50,
+                      letterSpacing: -0.88,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isStudent
+                        ? '앞서 선택한 정보들을 통해 학생이신 걸 확인했어요!\n홈 화면으로 이동 시, 프로필 사진을 설정할 수 있어요'
+                        : '입력하신 정보에 따라 아래 프로필 중 선택해주세요\n프로필은 추후 변경이 불가능하니 신중하게 선택해주세요',
+                    style: TextStyle(
+                      color: const Color(0xFF8490A3),
+                      fontSize: 12,
+                      fontFamily: 'Pretendard-Light',
+                      height: 1.50,
+                      letterSpacing: -0.28,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 메인 컨텐츠 - 학생용
+            if (isStudent)
+              Positioned(
+                left: 16,
+                top: 350,
+                right: 16,
+                bottom: 100,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 프로필 이미지
+                      Container(
+                        width: 160,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(
+                              "assets/icons/select_profile.png",
+                            ),
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // 학생 프로필 설명 박스
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: const Color(0xFFE4ECF8),
+                          shape: RoundedRectangleBorder(
+                            side: BorderSide(
+                              width: 0.70,
+                              color: const Color(0xFF3A88F4),
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '학생 프로필이란?',
+                              style: TextStyle(
+                                color: const Color(0xFF202020),
+                                fontSize: 14,
+                                fontFamily: 'Pretendard-Bold',
+                                letterSpacing: -0.32,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '부모님에게 다양한 미션을 제시받고, 직접 챌린지와 목표에 참여하여 달성하고 보상금을 받을 수 있어요!',
+                              style: TextStyle(
+                                color: const Color(0xFF8490A3),
+                                fontSize: 12,
+                                fontFamily: 'Pretendard-Light',
+                                height: 1.50,
+                                letterSpacing: -0.24,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 확인 버튼
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: const Color(0xFF146AFF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: GestureDetector(
+                          onTap: () {
+                            // 학생 프로필로 회원가입 진행
+                            setState(() {
+                              _selectedProfile = 'student';
+                            });
+                            _goToNextStep();
+                          },
+                          child: Text(
+                            '리틀뱅크와 성장하러 가기',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontFamily: 'Pretendard-Light',
+                              letterSpacing: -0.28,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // 메인 컨텐츠 - 부모/선생님용
+            if (!isStudent)
+              Positioned(
+                left: 16,
+                top: 280,
+                right: 16,
+                bottom: 100,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 부모 프로필 카드
+                      _buildProfileCard(
+                        'parent',
+                        '부모님',
+                        '자녀의 활동을 관리하고 지원할 수 있습니다',
+                        Icons.family_restroom,
+                      ),
+                      const SizedBox(height: 16),
+                      // 선생님 프로필 카드
+                      _buildProfileCard(
+                        'teacher',
+                        '선생님',
+                        '학생들을 관리하고 교육 자료를 제공할 수 있습니다',
+                        Icons.assignment_ind,
+                      ),
+                      const SizedBox(height: 32),
+                      // 다음 버튼
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                        decoration: ShapeDecoration(
+                          color:
+                              _selectedProfile.isNotEmpty
+                                  ? const Color(0xFF146AFF)
+                                  : const Color(0xFFDCDCDC),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: GestureDetector(
+                          onTap:
+                              _selectedProfile.isNotEmpty
+                                  ? _goToNextStep
+                                  : null,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                '다음',
+                                style: TextStyle(
+                                  color:
+                                      _selectedProfile.isNotEmpty
+                                          ? Colors.white
+                                          : const Color(0xFF8490A3),
+                                  fontSize: 14,
+                                  fontFamily: 'Pretendard-Medium',
+                                  letterSpacing: -0.28,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40), // 하단 여백 추가
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  // 프로필 선택 카드
+  // 프로필 선택 카드 (부모/선생님용)
   Widget _buildProfileCard(
     String type,
     String title,
@@ -701,35 +1291,21 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
   ) {
     final bool isSelected = _selectedProfile == type;
 
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         _showProfileSelectionWarning(type);
       },
-      borderRadius: BorderRadius.circular(12),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
-        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppTheme.primaryColor.withOpacity(0.1)
-                  : Colors.white,
+          color: isSelected ? const Color(0xFFE4ECF8) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : const Color(0xFFEEEEEE),
+            color:
+                isSelected ? const Color(0xFF3A88F4) : const Color(0xFFEEEEEE),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow:
-              isSelected
-                  ? [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                  : null,
         ),
         child: Row(
           children: [
@@ -739,7 +1315,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
               decoration: BoxDecoration(
                 color:
                     isSelected
-                        ? AppTheme.primaryColor
+                        ? const Color(0xFF3A88F4)
                         : const Color(0xFFF8F9FA),
                 shape: BoxShape.circle,
               ),
@@ -758,10 +1334,10 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                     title,
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Pretendard-Bold',
                       color:
                           isSelected
-                              ? AppTheme.primaryColor
+                              ? const Color(0xFF3A88F4)
                               : const Color(0xFF333333),
                     ),
                   ),
@@ -770,9 +1346,10 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
                     description,
                     style: TextStyle(
                       fontSize: 14,
+                      fontFamily: 'Pretendard-Light',
                       color:
                           isSelected
-                              ? AppTheme.primaryColor.withOpacity(0.8)
+                              ? const Color(0xFF3A88F4)
                               : const Color(0xFF666666),
                     ),
                   ),
@@ -780,7 +1357,11 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 24),
+              Icon(
+                Icons.check_circle,
+                color: const Color(0xFF3A88F4),
+                size: 24,
+              ),
           ],
         ),
       ),
@@ -795,7 +1376,7 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
           (context) => AlertDialog(
             title: const Text(
               '프로필 선택 확인',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(fontSize: 18, fontFamily: 'Pretendard-Bold'),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -803,31 +1384,17 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
               children: [
                 const Text(
                   '선택하신 프로필은 추후 변경이 불가능합니다.',
-                  style: TextStyle(fontSize: 16, color: Color(0xFF333333)),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'Pretendard-Medium',
+                  ),
                 ),
                 const SizedBox(height: 16),
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF666666),
-                    ),
-                    children: [
-                      const TextSpan(text: '선택하신 '),
-                      TextSpan(
-                        text:
-                            type == 'student'
-                                ? '학생'
-                                : (type == 'parent' ? '부모님' : '선생님'),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      const TextSpan(
-                        text: ' 프로필로 서비스가 제공되며, 프로필 변경이 필요한 경우 고객센터로 문의해 주세요.',
-                      ),
-                    ],
+                Text(
+                  '선택하신 ${type == 'parent' ? '부모님' : '선생님'} 프로필로 서비스가 제공되며, 프로필 변경이 필요한 경우 고객센터로 문의해 주세요.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Light',
                   ),
                 ),
               ],
@@ -835,155 +1402,31 @@ class _ProfileSelectionScreenState extends State<ProfileSelectionScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // 다이얼로그 닫기
+                  Navigator.pop(context);
                 },
                 child: const Text(
                   '다시 선택하기',
-                  style: TextStyle(color: Color(0xFF666666)),
+                  style: TextStyle(fontFamily: 'Pretendard-Medium'),
                 ),
               ),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context); // 다이얼로그 닫기
-                  // 선택 확정 처리
+                  Navigator.pop(context);
                   setState(() {
                     _selectedProfile = type;
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  backgroundColor: const Color(0xFF3A88F4),
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('확인 및 계속하기'),
+                child: const Text(
+                  '확인 및 계속하기',
+                  style: TextStyle(fontFamily: 'Pretendard-Medium'),
+                ),
               ),
             ],
           ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // 주민번호 기반으로 학생 여부 확인
-    final bool isStudent = _isStudent();
-
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          '프로필 선택',
-          style: TextStyle(
-            color: Color(0xFF333333),
-            fontWeight: FontWeight.w600,
-            fontSize: 18,
-          ),
-        ),
-        automaticallyImplyLeading: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: _buildStepIndicator(),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '프로필을 선택해주세요',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        isStudent
-                            ? '입력하신 정보에 따라 학생으로 확인되었습니다'
-                            : '입력하신 정보에 따라 아래 프로필 중 선택해주세요',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF666666),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // 학생인 경우 학생 프로필만 표시
-                      if (isStudent)
-                        _buildProfileCard(
-                          'student',
-                          '학생',
-                          '학생 전용 서비스 및 혜택을 이용할 수 있습니다',
-                          Icons.school,
-                        )
-                      // 학생이 아닌 경우 부모와 선생님 프로필 표시
-                      else ...[
-                        _buildProfileCard(
-                          'parent',
-                          '부모님',
-                          '자녀의 활동을 관리하고 지원할 수 있습니다',
-                          Icons.family_restroom,
-                        ),
-                        _buildProfileCard(
-                          'teacher',
-                          '선생님',
-                          '학생들을 관리하고 교육 자료를 제공할 수 있습니다',
-                          Icons.assignment_ind,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(24.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: _selectedProfile.isNotEmpty ? _goToNextStep : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                _selectedProfile.isNotEmpty
-                    ? AppTheme.primaryColor
-                    : Colors.grey.shade300,
-            foregroundColor:
-                _selectedProfile.isNotEmpty
-                    ? Colors.white
-                    : Colors.grey.shade700,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            elevation: 0,
-          ),
-          child: const Text(
-            '다음',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
     );
   }
 }

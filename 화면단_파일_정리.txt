@@ -1,0 +1,125 @@
+==========================================================
+          리틀뱅크 앱 화면단 파일 용도 정리
+==========================================================
+
+▓ 메인 파일
+  ├─ main.dart                     - 앱 진입점, 전역 설정 및 초기화
+  └─ home_screen.dart              - 공통 홈 화면 (구형)
+
+▓ 공통 화면 (screens/common/)
+  ├─ login_screen.dart             - 로그인 화면 (카카오/네이버 연동)
+  ├─ register_screen.dart          - 회원가입 화면
+  ├─ signup_screen.dart            - 회원가입 상세 화면
+  ├─ verification_screen.dart      - 본인인증 화면
+  ├─ agreement_screen.dart         - 약관동의 화면
+  ├─ profile_selection_screen.dart - 프로필 선택 화면
+  ├─ final_screen.dart             - 가입완료 화면
+  ├─ additional_info_screen.dart   - 추가정보 입력 화면
+  ├─ additional_info_verification_screen.dart - 추가정보 인증 화면
+  ├─ logout_modal.dart             - 로그아웃 모달
+  ├─ home_screen.dart              - 공통 홈 화면 래퍼
+  ├─ agreement_law/                - 약관 관련 화면들
+  ├─ finder/                       - 아이디/비밀번호 찾기 화면들
+  ├─ modal/                        - 공통 모달 컴포넌트들
+  └─ splash/                       - 스플래시 화면들
+
+▓ 아이 화면 (screens/child/)
+  ├─ home_screen.dart              - 아이 메인 홈 화면
+  ├─ mission_screen.dart           - 미션 화면
+  ├─ feed_screen.dart              - 피드 화면
+  ├─ chat_list_screen.dart         - 채팅 목록 화면
+  ├─ chat_detail_screen.dart       - 채팅 상세 화면
+  ├─ my_page_screen.dart           - 마이페이지 화면
+  ├─ notification_screen.dart      - 알림 화면
+  ├─ goal_setting_screen.dart      - 목표 설정 화면
+  ├─ goal_edit_screen.dart         - 목표 수정 화면
+  ├─ goal_detail_screen.dart       - 목표 상세 화면
+  ├─ challenge_detail_screen.dart  - 챌린지 상세 화면
+  ├─ all_challenges_screen.dart    - 전체 챌린지 화면
+  ├─ create_post_screen.dart       - 게시글 작성 화면
+  ├─ share_with_friend_screen.dart - 친구 공유 화면
+  ├─ user_missions_screen.dart     - 사용자 미션 화면
+  ├─ edit_profile_screen.dart      - 프로필 수정 화면
+  ├─ design_detail_screen.dart     - 디자인 상세 화면
+  ├─ child_home_wrapper.dart       - 아이 홈 래퍼
+  ├─ bank/                         - 은행 관련 화면들 (충전, 계좌연결 등)
+  ├─ benefit/                      - 혜택 관련 화면들
+  ├─ challenge/                    - 챌린지 관련 화면들
+  ├─ chat/                         - 채팅 관련 화면들
+  ├─ feed/                         - 피드 관련 화면들
+  ├─ mission/                      - 미션 관련 화면들
+  ├─ my/                           - 마이페이지 관련 화면들
+  ├─ notice_modal/                 - 알림 모달 화면들
+  └─ widgets/                      - 아이 전용 위젯들
+
+▓ 부모 화면 (screens/parent/)
+  ├─ home_screen.dart              - 부모 메인 홈 화면
+  ├─ mission_screen.dart           - 부모 미션 관리 화면
+  ├─ chat_list_screen.dart         - 부모 채팅 목록 화면
+  ├─ chat_detail_screen.dart       - 부모 채팅 상세 화면
+  ├─ edit_profile_screen.dart      - 부모 프로필 수정 화면
+  ├─ mission_creation_screen.dart  - 미션 생성 화면
+  ├─ parent_home_wrapper.dart      - 부모 홈 래퍼
+  ├─ alert/                        - 부모 알림 관련 화면들
+  ├─ analysis/                     - 분석 관련 화면들
+  ├─ challenge/                    - 부모 챌린지 관련 화면들
+  ├─ chat/                         - 부모 채팅 관련 화면들
+  ├─ cs/                           - 고객센터 관련 화면들
+  ├─ mission/                      - 부모 미션 관련 화면들
+  ├─ my/                           - 부모 마이페이지 관련 화면들
+  └─ widgets/                      - 부모 전용 위젯들
+
+▓ 피드 화면 (screens/feed/)
+  ├─ today_feed_screen.dart        - 오늘의 피드 화면
+  ├─ feed_detail_screen.dart       - 피드 상세 화면
+  └─ edit_feed_screen.dart         - 피드 수정 화면
+
+▓ 알림 화면 (screens/notice_kid/)
+  ├─ child_screen_wrapper.dart     - 아이 화면 래퍼 (알림 기능 포함)
+  ├─ notification_service.dart     - 알림 서비스
+  ├─ notice_kid.dart               - 아이 알림 화면
+  ├─ test_notification_screen.dart - 알림 테스트 화면
+  ├─ notification_overlay.dart     - 알림 오버레이
+  ├─ mission_reward_notification.dart - 미션 보상 알림
+  ├─ cs_comment_notification.dart  - 고객센터 댓글 알림
+  └─ feed_comment_notification.dart - 피드 댓글 알림
+
+▓ 위젯 (widgets/)
+  ├─ challenge_card.dart           - 챌린지 카드 위젯
+  ├─ profile_image_upload_dialog.dart - 프로필 이미지 업로드 다이얼로그
+  ├─ balance_game_card.dart        - 밸런스 게임 카드 위젯
+  ├─ shared_weekly_goal_widget.dart - 공유 주간 목표 위젯
+  ├─ shared_weekly_goal_empty_widget.dart - 빈 주간 목표 위젯
+  ├─ weekly_goal_card.dart         - 주간 목표 카드 위젯
+  ├─ mission_progress_card.dart    - 미션 진행 카드 위젯
+  ├─ mission_card.dart             - 미션 카드 위젯
+  ├─ profile_image.dart            - 프로필 이미지 위젯
+  ├─ shared_goal_data.dart         - 공유 목표 데이터
+  ├─ top_users_card.dart           - 상위 사용자 카드 위젯
+  ├─ allowance_card.dart           - 용돈 카드 위젯
+  ├─ nav_item.dart                 - 네비게이션 아이템 위젯
+  ├─ design_card.dart              - 디자인 카드 위젯
+  ├─ agreement/                    - 약관 관련 위젯들
+  ├─ challenge/                    - 챌린지 관련 위젯들
+  ├─ chat/                         - 채팅 관련 위젯들
+  ├─ common/                       - 공통 위젯들
+  ├─ feed/                         - 피드 관련 위젯들
+  ├─ mission/                      - 미션 관련 위젯들 (10개 파일)
+  └─ parent/                       - 부모 전용 위젯들
+
+==========================================================
+                      주요 기능별 정리
+==========================================================
+
+🔹 인증 및 회원가입: common/ 폴더 내 login, register, verification 등
+🔹 아이 메인 기능: child/ 폴더 - 홈, 미션, 피드, 채팅, 마이페이지
+🔹 부모 관리 기능: parent/ 폴더 - 아이 관리, 미션 생성, 분석 등
+🔹 공유 컨텐츠: feed/ 폴더 - 피드 조회, 작성, 수정
+🔹 알림 시스템: notice_kid/ 폴더 - 각종 알림 처리
+🔹 재사용 UI: widgets/ 폴더 - 공통 컴포넌트들
+
+==========================================================
+총 파일 수: 약 150+ 개의 화면 및 위젯 파일
+주요 사용자: 아이(학생), 부모, 선생님
+핵심 기능: 금융교육, 미션, 챌린지, 소셜 피드, 가족 소통
+==========================================================

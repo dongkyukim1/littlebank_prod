@@ -10,17 +10,17 @@ class NoticeScreen extends StatefulWidget {
 class _NoticeScreenState extends State<NoticeScreen> {
   int _selectedTabIndex = 0;
   final List<String> _tabNames = ['전체', '일반', '업데이트'];
-  
+
   // 검색 기능을 위한 변수 추가
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,8 +31,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
           style: TextStyle(
             color: Colors.black,
             fontSize: 16,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w700,
+            fontFamily: 'Pretendard-Bold',
             letterSpacing: -0.32,
           ),
         ),
@@ -40,42 +39,28 @@ class _NoticeScreenState extends State<NoticeScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 16),
+          icon: Image.asset('assets/icons/my/뒤로가기.png', width: 20, height: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          IconButton(
-            icon: Image.asset(
-              'assets/images/home.png',
-              width: 24,
-              height: 24,
-            ),
-            onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
           // 탭 영역
           const SizedBox(height: 16),
           _buildTabBar(),
-          
+
           // 검색창
           const SizedBox(height: 24),
           _buildSearchBar(),
           const SizedBox(height: 16),
-          
+
           // 공지사항 목록
-          Expanded(
-            child: _buildNoticeList(),
-          ),
+          Expanded(child: _buildNoticeList()),
         ],
       ),
     );
   }
-  
+
   // 탭 바 위젯
   Widget _buildTabBar() {
     return Column(
@@ -86,9 +71,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
           child: Row(
             children: List.generate(
               _tabNames.length,
-              (index) => Expanded(
-                child: _buildTabItem(index),
-              ),
+              (index) => Expanded(child: _buildTabItem(index)),
             ),
           ),
         ),
@@ -100,11 +83,11 @@ class _NoticeScreenState extends State<NoticeScreen> {
       ],
     );
   }
-  
+
   // 탭 아이템 위젯
   Widget _buildTabItem(int index) {
     final bool isSelected = _selectedTabIndex == index;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -114,37 +97,38 @@ class _NoticeScreenState extends State<NoticeScreen> {
       child: Column(
         children: [
           Expanded(
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: const ShapeDecoration(
-                      color: Color(0xFF146AFF),
-                      shape: OvalBorder(),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Text(
+                  _tabNames[index],
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color:
+                        isSelected
+                            ? const Color(0xFF202020)
+                            : const Color(0xFF999999),
+                    fontSize: 14,
+                    fontFamily:
+                        isSelected ? 'Pretendard-Medium' : 'Pretendard-Light',
+                    letterSpacing: -0.32,
+                  ),
+                ),
+                Positioned(
+                  left: -10,
+                  top: 0,
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF146AFF),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _tabNames[index],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: isSelected
-                          ? const Color(0xFF202020)
-                          : const Color(0xFF999999),
-                      fontSize: 14,
-                      fontFamily: 'Pretendard',
-                      fontWeight: isSelected
-                          ? FontWeight.w500
-                          : FontWeight.w300,
-                      letterSpacing: -0.32,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           // 선택된 탭 아래에 블랙 라인 표시
@@ -156,7 +140,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
       ),
     );
   }
-  
+
   // 검색창 위젯
   Widget _buildSearchBar() {
     return Container(
@@ -166,10 +150,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: ShapeDecoration(
         shape: RoundedRectangleBorder(
-          side: const BorderSide(
-            width: 1,
-            color: Color(0xFFDADADA),
-          ),
+          side: const BorderSide(width: 1, color: Color(0xFFDADADA)),
           borderRadius: BorderRadius.circular(32),
         ),
       ),
@@ -177,10 +158,8 @@ class _NoticeScreenState extends State<NoticeScreen> {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.search,
-            color: Color(0xFF999999),
-            size: 24,
+          Center(
+            child: Image.asset('assets/icons/my/검색.png', width: 24, height: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -195,16 +174,15 @@ class _NoticeScreenState extends State<NoticeScreen> {
               style: const TextStyle(
                 color: Color(0xFF202020),
                 fontSize: 14,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w300,
+                fontFamily: 'Pretendard-Light',
+                letterSpacing: -0.28,
               ),
               decoration: const InputDecoration(
                 hintText: '찾고싶은 내용을 입력해 주세요',
                 hintStyle: TextStyle(
                   color: Color(0xFF999999),
-                  fontSize: 12,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w200,
+                  fontSize: 14,
+                  fontFamily: 'Pretendard-ExtraLight',
                   letterSpacing: -0.28,
                 ),
                 border: InputBorder.none,
@@ -212,8 +190,9 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 enabledBorder: InputBorder.none,
                 errorBorder: InputBorder.none,
                 disabledBorder: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                contentPadding: EdgeInsets.symmetric(vertical: 0),
                 isDense: true,
+                isCollapsed: true,
               ),
             ),
           ),
@@ -236,7 +215,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
       ),
     );
   }
-  
+
   // 공지사항 목록 위젯
   Widget _buildNoticeList() {
     // 공지사항 데이터 (실제로는 API에서 가져오겠지만 예시로 하드코딩)
@@ -261,51 +240,46 @@ class _NoticeScreenState extends State<NoticeScreen> {
         'title': '신규 기능 안내 - 내 친구들이 포인트를 모은 방법',
         'date': '2025. 04. 15',
       },
-      {
-        'type': '업데이트',
-        'title': 'v. 1. 25 업데이트 안내',
-        'date': '2025. 04. 15',
-      },
+      {'type': '업데이트', 'title': 'v. 1. 25 업데이트 안내', 'date': '2025. 04. 15'},
     ];
-    
+
     // 선택된 탭과 검색어에 따라 필터링
-    List<Map<String, String>> filteredNotices = noticeData.where((notice) {
-      bool matchesTab = _selectedTabIndex == 0 || 
-          (_selectedTabIndex == 1 && notice['type'] != '업데이트') ||
-          (_selectedTabIndex == 2 && notice['type'] == '업데이트');
-      
-      bool matchesSearch = _searchQuery.isEmpty || 
-          notice['title']!.toLowerCase().contains(_searchQuery) ||
-          notice['type']!.toLowerCase().contains(_searchQuery);
-      
-      return matchesTab && matchesSearch;
-    }).toList();
-    
+    List<Map<String, String>> filteredNotices =
+        noticeData.where((notice) {
+          bool matchesTab =
+              _selectedTabIndex == 0 ||
+              (_selectedTabIndex == 1 && notice['type'] != '업데이트') ||
+              (_selectedTabIndex == 2 && notice['type'] == '업데이트');
+
+          bool matchesSearch =
+              _searchQuery.isEmpty ||
+              notice['title']!.toLowerCase().contains(_searchQuery) ||
+              notice['type']!.toLowerCase().contains(_searchQuery);
+
+          return matchesTab && matchesSearch;
+        }).toList();
+
     if (filteredNotices.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 48,
-              color: Colors.grey[300],
-            ),
+            Icon(Icons.search_off, size: 48, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
               '검색 결과가 없습니다',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 16,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w400,
+                fontFamily: 'Pretendard-Regular',
+                letterSpacing: -0.32,
               ),
             ),
           ],
         ),
       );
     }
-    
+
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: filteredNotices.length,
@@ -320,7 +294,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
       },
     );
   }
-  
+
   // 공지사항 아이템 위젯
   Widget _buildNoticeItem({
     required String type,
@@ -333,29 +307,37 @@ class _NoticeScreenState extends State<NoticeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 'N' 표시 원형 아이콘
-          Container(
+          SizedBox(
             width: 18,
             height: 18,
-            decoration: const ShapeDecoration(
-              color: Color(0xFF5D9EFF),
-              shape: OvalBorder(),
-            ),
-            child: const Center(
-              child: Text(
-                'N',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: -0.24,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const ShapeDecoration(
+                    color: Color(0xFF5D9EFF),
+                    shape: OvalBorder(),
+                  ),
                 ),
-              ),
+                const Positioned(
+                  child: Text(
+                    'N',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontFamily: 'Pretendard-Medium',
+                      letterSpacing: -0.24,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 12),
-          
+
           // 공지사항 내용
           Expanded(
             child: Column(
@@ -370,8 +352,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                         style: const TextStyle(
                           color: Colors.black,
                           fontSize: 14,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w300,
+                          fontFamily: 'Pretendard-Light',
                           height: 1.5,
                           letterSpacing: -0.28,
                         ),
@@ -381,8 +362,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                         style: const TextStyle(
                           color: Color(0xFF202020),
                           fontSize: 14,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w200,
+                          fontFamily: 'Pretendard-ExtraLight',
                           height: 1.5,
                           letterSpacing: -0.28,
                         ),
@@ -397,9 +377,8 @@ class _NoticeScreenState extends State<NoticeScreen> {
                   date,
                   style: const TextStyle(
                     color: Color(0xBF999999),
-                    fontSize: 10,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w200,
+                    fontSize: 12,
+                    fontFamily: 'Pretendard-Light',
                     letterSpacing: -0.24,
                   ),
                 ),
@@ -407,7 +386,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
               ],
             ),
           ),
-          
+
           // 화살표 아이콘
           Padding(
             padding: const EdgeInsets.only(top: 2),
@@ -421,4 +400,4 @@ class _NoticeScreenState extends State<NoticeScreen> {
       ),
     );
   }
-} 
+}

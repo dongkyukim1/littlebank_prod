@@ -24,4 +24,4 @@ class NavigationService {
   static Future<dynamic> replaceWith(String routeName, {Object? arguments}) {
     return navigator!.pushReplacementNamed(routeName, arguments: arguments);
   }
-} 
+}

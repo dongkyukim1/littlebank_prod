@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/child/user_missions_screen.dart';
+import 'mission/components/mission_card_template.dart';
 
 class MissionCard extends StatefulWidget {
   final Function(bool) onExpandChanged;
@@ -42,10 +43,6 @@ class _MissionCardState extends State<MissionCard>
         widget.initialCardIndex < cards.length) {
       try {
         // 외부에서 인덱스가 변경되면 PageController도 해당 페이지로 이동
-        print(
-          '미션 카드 인덱스 변경: ${widget.initialCardIndex} - ${cards[widget.initialCardIndex]['title']}',
-        );
-
         cardController.jumpToPage(widget.initialCardIndex);
         currentCardIndex.value = widget.initialCardIndex;
 
@@ -53,7 +50,6 @@ class _MissionCardState extends State<MissionCard>
         setState(() {});
       } catch (e) {
         // 화면 전환 중 오류 발생 방지
-        print('카드 전환 중 오류: $e');
       }
     }
   }
@@ -65,7 +61,7 @@ class _MissionCardState extends State<MissionCard>
       cardController.dispose();
       currentCardIndex.dispose();
     } catch (e) {
-      print('리소스 해제 중 오류: $e');
+      // 리소스 해제 중 오류 무시
     }
     super.dispose();
   }
@@ -79,6 +75,9 @@ class _MissionCardState extends State<MissionCard>
       'deadline': 'D-6',
       'description': '영어 단어 300개 외워오기 · 3월 30일까지',
       'amount': '300,000원',
+      'progress': 0.6,
+      'steps': 3,
+      'color': const Color(0xFF5D9EFF),
     },
     {
       'type': 'school',
@@ -87,6 +86,9 @@ class _MissionCardState extends State<MissionCard>
       'deadline': 'D-4',
       'description': '수학 5단원 문제집 완료하기 · 3월 25일까지',
       'amount': '250,000원',
+      'progress': 0.45,
+      'steps': 2,
+      'color': const Color(0xFF5D9EFF),
     },
     {
       'type': 'family',
@@ -94,20 +96,21 @@ class _MissionCardState extends State<MissionCard>
       'missionType': '가족 미션',
       'deadline': 'D-3',
       'description': '이번 주 설거지 담당 · 내 친구 XX이 참여',
+      'progress': 0.25,
+      'steps': 1,
+      'color': const Color(0xFF89DA8D),
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin 사용 시 필요
-    const double progressValue = 0.4;
     // 높이를 화면의 40%로 줄임
     final modalHeight = MediaQuery.of(context).size.height * 0.4;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // 현재 카드 인덱스 확인 출력
+    // 현재 카드 인덱스 확인
     final int index = currentCardIndex.value;
-    print('현재 카드 인덱스: $index - ${cards[index]['title']}');
 
     return AnimatedContainer(
       width: screenWidth,
@@ -137,7 +140,6 @@ class _MissionCardState extends State<MissionCard>
               itemCount: cards.length,
               onPageChanged: (newIndex) {
                 // 페이지 변경 시 인덱스 업데이트
-                print('헤더 PageView 변경됨 - 인덱스: $newIndex');
                 currentCardIndex.value = newIndex;
                 // 외부로 변경된 인덱스 전달 (존재하는 경우)
                 widget.onCardChanged?.call(newIndex);
@@ -209,17 +211,7 @@ class _MissionCardState extends State<MissionCard>
                       index: currentCardIndex.value,
                       children: List.generate(cards.length, (i) {
                         final card = cards[i];
-                        final cardType = card['type'];
-
-                        print('빌드 중인 카드: $i - $cardType - ${card['title']}');
-
-                        if (cardType == 'progress') {
-                          return _buildProgressCard(card, 0.6);
-                        } else if (cardType == 'school') {
-                          return _buildSchoolCard(card);
-                        } else {
-                          return _buildFamilyCard(card);
-                        }
+                        return _buildCardContent(card);
                       }),
                     ),
                   ),
@@ -255,894 +247,63 @@ class _MissionCardState extends State<MissionCard>
     );
   }
 
-  Widget _buildProgressCard(Map<String, dynamic> card, double progressValue) {
-    return SingleChildScrollView(
+  // 미션 카드 내용 빌드
+  Widget _buildCardContent(Map<String, dynamic> card) {
+    // 공통 버튼 생성
+    final buttonText =
+        card['type'] == 'progress' ? '참여 중인 모든 미션 보러가기' : '참여 가능한 모든 미션 보러가기';
+
+    final commonButton = InkWell(
+      onTap: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserMissionsScreen()),
+        );
+      },
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment(0.00, 0.50),
-            end: Alignment(1.00, 0.50),
-            colors: [Color(0xFFF0F2F7), Color(0xFFF2FFF3)],
-          ),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: ShapeDecoration(
+          color: const Color(0xFF146AFF),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shadows: [
+            BoxShadow(
+              color: const Color(0x24000000),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
+            ),
+          ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: ShapeDecoration(
+            Text(
+              buttonText,
+              style: const TextStyle(
                 color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                shadows: [
-                  BoxShadow(
-                    color: const Color(0x24000000),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 학원 미션 태그
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: const Color(0xFF5D9EFF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    child: Text(
-                      card['missionType'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // 영어 단어 100개 암기 타이틀
-                  Text(
-                    card['title'],
-                    style: const TextStyle(
-                      color: Color(0xFF353535),
-                      fontSize: 16,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-
-                  // 설명 추가
-                  const SizedBox(height: 8),
-                  Text(
-                    card['description'],
-                    style: const TextStyle(
-                      color: Color(0xFF666666),
-                      fontSize: 12,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-
-                  // 라벨과 프로그레스바 영역
-                  Container(
-                    margin: const EdgeInsets.only(top: 20),
-                    height: 40,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final barWidth = constraints.maxWidth;
-                        // 60% 지점의 x 좌표 계산
-                        final position60Percent = barWidth * 0.6;
-
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            // 배경바
-                            Positioned(
-                              top: 16,
-                              left: 0,
-                              child: Container(
-                                width: barWidth,
-                                height: 8,
-                                decoration: ShapeDecoration(
-                                  color: const Color(0xFFDDDDDD),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 진행바
-                            Positioned(
-                              top: 16,
-                              left: 0,
-                              child: Container(
-                                width: position60Percent,
-                                height: 8,
-                                decoration: ShapeDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [
-                                      Color(0xFF5D9EFF),
-                                      Color(0xFFF0F6FF),
-                                    ],
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 포인트들 (프로그레스바 위에 겹치도록)
-                            for (int i = 0; i < 5; i++)
-                              Positioned(
-                                left:
-                                    i == 0
-                                        ? 0
-                                        : i == 4
-                                        ? barWidth - 24
-                                        : barWidth * (i / 4.0) - 12,
-                                top: 8,
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        i <= 2
-                                            ? const Color(0xFF5D9EFF)
-                                            : const Color(0xFFCCCCCC),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFFC2D6F3),
-                                      width: 4,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/images/flag.png',
-                                      width: 12,
-                                      height: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                            // 60% 달성 중 표시 - 60% 지점 위에 정확히 배치
-                            Positioned(
-                              left: position60Percent - 35, // 정확히 60% 위치에 중앙 정렬
-                              top: -20,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: const Color(0xFFFFD27F),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '60% 달성 중',
-                                  style: TextStyle(
-                                    color: Color(0xFF001F55),
-                                    fontSize: 10,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 금액 표시 (우측 상단에 배치)
-                            Positioned(
-                              right: 0,
-                              top: -20,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: const Color(0xFFFFD27F),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: Text(
-                                  card['amount'] ?? '200,000원',
-                                  style: const TextStyle(
-                                    color: Color(0xFF001F55),
-                                    fontSize: 10,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                fontSize: 12,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w500,
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // 버튼
-            InkWell(
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UserMissionsScreen(),
-                  ),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: ShapeDecoration(
-                  color: const Color(0xFF146AFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  shadows: [
-                    BoxShadow(
-                      color: const Color(0x24000000),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      '참여 중인 모든 미션 보러가기',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white,
-                      size: 10,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 10),
           ],
         ),
       ),
     );
-  }
 
-  Widget _buildSchoolCard(Map<String, dynamic> card) {
-    return SingleChildScrollView(
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment(0.00, 0.50),
-            end: Alignment(1.00, 0.50),
-            colors: [Color(0xFFF0F2F7), Color(0xFFF2FFF3)],
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: ShapeDecoration(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                shadows: [
-                  BoxShadow(
-                    color: const Color(0x24000000),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 학원 미션 태그
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: const Color(0xFF5D9EFF),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    child: Text(
-                      card['missionType'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // 영어 단어 300개 외워오기 타이틀
-                  Text(
-                    card['title'],
-                    style: const TextStyle(
-                      color: Color(0xFF353535),
-                      fontSize: 16,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-
-                  // 설명 추가
-                  const SizedBox(height: 8),
-                  Text(
-                    card['description'],
-                    style: const TextStyle(
-                      color: Color(0xFF666666),
-                      fontSize: 12,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-
-                  // 라벨과 프로그레스바 영역
-                  Container(
-                    margin: const EdgeInsets.only(top: 20),
-                    height: 40,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final barWidth = constraints.maxWidth;
-                        // 45% 지점의 x 좌표 계산
-                        final positionPercent = barWidth * 0.45;
-
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            // 배경바
-                            Positioned(
-                              top: 16,
-                              left: 0,
-                              child: Container(
-                                width: barWidth,
-                                height: 8,
-                                decoration: ShapeDecoration(
-                                  color: const Color(0xFFDDDDDD),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 진행바
-                            Positioned(
-                              top: 16,
-                              left: 0,
-                              child: Container(
-                                width: positionPercent,
-                                height: 8,
-                                decoration: ShapeDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [
-                                      Color(0xFF5D9EFF),
-                                      Color(0xFFF0F6FF),
-                                    ],
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 포인트들 (프로그레스바 위에 겹치도록)
-                            for (int i = 0; i < 5; i++)
-                              Positioned(
-                                left:
-                                    i == 0
-                                        ? 0
-                                        : i == 4
-                                        ? barWidth - 24
-                                        : barWidth * (i / 4.0) - 12,
-                                top: 8,
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        i <= 1
-                                            ? const Color(0xFF5D9EFF)
-                                            : const Color(0xFFCCCCCC),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFFC2D6F3),
-                                      width: 4,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/images/flag.png',
-                                      width: 12,
-                                      height: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                            // 45% 달성 중 표시
-                            Positioned(
-                              left: positionPercent - 35,
-                              top: -20,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: const Color(0xFFFFD27F),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '45% 달성 중',
-                                  style: TextStyle(
-                                    color: Color(0xFF001F55),
-                                    fontSize: 10,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 금액 표시 (우측 상단에 배치)
-                            Positioned(
-                              right: 0,
-                              top: -20,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: const Color(0xFFFFD27F),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '250,000원',
-                                  style: TextStyle(
-                                    color: Color(0xFF001F55),
-                                    fontSize: 10,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // 버튼
-            InkWell(
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UserMissionsScreen(),
-                  ),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: ShapeDecoration(
-                  color: const Color(0xFF146AFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  shadows: [
-                    BoxShadow(
-                      color: const Color(0x24000000),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      '참여 가능한 모든 미션 보러가기',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white,
-                      size: 10,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFamilyCard(Map<String, dynamic> card) {
-    return SingleChildScrollView(
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment(0.00, 0.50),
-            end: Alignment(1.00, 0.50),
-            colors: [Color(0xFFF0F2F7), Color(0xFFF2FFF3)],
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: ShapeDecoration(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                shadows: [
-                  BoxShadow(
-                    color: const Color(0x24000000),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 가족 미션 태그
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: const Color(0xFF89DA8D), // 가족 미션은 초록색 계열로 변경
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    child: Text(
-                      card['missionType'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // 가족 미션 타이틀
-                  Text(
-                    card['title'],
-                    style: const TextStyle(
-                      color: Color(0xFF353535),
-                      fontSize: 16,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-
-                  // 설명 추가
-                  const SizedBox(height: 8),
-                  Text(
-                    card['description'],
-                    style: const TextStyle(
-                      color: Color(0xFF666666),
-                      fontSize: 12,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-
-                  // 라벨과 프로그레스바 영역
-                  Container(
-                    margin: const EdgeInsets.only(top: 20),
-                    height: 40,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final barWidth = constraints.maxWidth;
-                        // 25% 지점의 x 좌표 계산
-                        final positionPercent = barWidth * 0.25;
-
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            // 배경바
-                            Positioned(
-                              top: 16,
-                              left: 0,
-                              child: Container(
-                                width: barWidth,
-                                height: 8,
-                                decoration: ShapeDecoration(
-                                  color: const Color(0xFFDDDDDD),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 진행바
-                            Positioned(
-                              top: 16,
-                              left: 0,
-                              child: Container(
-                                width: positionPercent,
-                                height: 8,
-                                decoration: ShapeDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [
-                                      Color(0xFF89DA8D), // 가족 미션은 초록색 계열로 변경
-                                      Color(0xFFE7F9E8),
-                                    ],
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 포인트들 (프로그레스바 위에 겹치도록)
-                            for (int i = 0; i < 5; i++)
-                              Positioned(
-                                left:
-                                    i == 0
-                                        ? 0
-                                        : i == 4
-                                        ? barWidth - 24
-                                        : barWidth * (i / 4.0) - 12,
-                                top: 8,
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        i <= 0
-                                            ? const Color(
-                                              0xFF89DA8D,
-                                            ) // 가족 미션은 초록색 계열로 변경
-                                            : const Color(0xFFCCCCCC),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(
-                                        0xFFCBEECD,
-                                      ), // 가족 미션은 초록색 계열로 변경
-                                      width: 4,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/images/flag.png',
-                                      width: 12,
-                                      height: 12,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                            // 25% 달성 중 표시
-                            Positioned(
-                              left: positionPercent - 35,
-                              top: -20,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: const Color(
-                                    0xFFB8F4BC,
-                                  ), // 가족 미션은 초록색 계열로 변경
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '25% 달성 중',
-                                  style: TextStyle(
-                                    color: Color(
-                                      0xFF00550A,
-                                    ), // 가족 미션은 초록색 계열로 변경
-                                    fontSize: 10,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // 금액 표시 (우측 상단에 배치)
-                            Positioned(
-                              right: 0,
-                              top: -20,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: const Color(
-                                    0xFFB8F4BC,
-                                  ), // 가족 미션은 초록색 계열로 변경
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '50,000원',
-                                  style: TextStyle(
-                                    color: Color(
-                                      0xFF00550A,
-                                    ), // 가족 미션은 초록색 계열로 변경
-                                    fontSize: 10,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // 버튼
-            InkWell(
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UserMissionsScreen(),
-                  ),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: ShapeDecoration(
-                  color: const Color(0xFF89DA8D), // 가족 미션은 초록색 계열로 변경
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  shadows: [
-                    BoxShadow(
-                      color: const Color(0x24000000),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      '참여 가능한 모든 미션 보러가기',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white,
-                      size: 10,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    // 템플릿 반환
+    return MissionCardTemplate(
+      title: card['title'],
+      missionType: card['missionType'],
+      description: card['description'],
+      amount: card['amount'],
+      tagColor: card['color'],
+      progressValue: card['progress'],
+      completedSteps: card['steps'],
+      button: commonButton,
     );
   }
 }

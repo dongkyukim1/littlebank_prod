@@ -59,3 +59,9 @@ flutter run
 ## 라이센스
 
 MIT
+
+# 개발 모드로 실행
+flutter run -d <device-id>
+
+# AAB 빌드
+flutter build appbundle --release

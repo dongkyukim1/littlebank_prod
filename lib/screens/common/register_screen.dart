@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../services/email_verification_service.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 class RegisterScreen extends StatefulWidget {
   final String userId; // 이메일
-  final String jumin; // 주민번호 앞자리
-  
-  const RegisterScreen({
-    super.key,
-    required this.userId,
-    required this.jumin,
-  });
+  final String jumin; // 생년월일 6자리
+
+  const RegisterScreen({super.key, required this.userId, required this.jumin});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -17,7 +15,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // 컨트롤러
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
@@ -25,12 +23,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _bankNameController = TextEditingController();
   final _bankAccountController = TextEditingController();
   final _bankCodeController = TextEditingController();
-  
+
   // 상태 변수
   bool _isLoading = false;
   String _role = 'PARENT'; // 기본값은 부모
   bool _isPasswordVisible = false;
-  
+  bool _isEmailVerificationLoading = false;
+  bool _isEmailVerified = false;
+
   @override
   void dispose() {
     _passwordController.dispose();
@@ -41,17 +41,71 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _bankCodeController.dispose();
     super.dispose();
   }
-  
+
+  // 이메일 확인 메일 발송
+  Future<void> _sendVerificationEmail() async {
+    if (kDebugMode) {
+      print('이메일 확인 버튼 클릭됨 - 이메일: ${widget.userId}');
+    }
+
+    setState(() {
+      _isEmailVerificationLoading = true;
+    });
+
+    try {
+      final emailService = EmailVerificationService();
+      if (kDebugMode) {
+        print('이메일 서비스 인스턴스 생성 완료, API 호출 시작');
+      }
+
+      final result = await emailService.sendVerificationEmail(widget.userId);
+
+      if (kDebugMode) {
+        print('이메일 인증 API 호출 결과: $result');
+      }
+
+      setState(() {
+        _isEmailVerificationLoading = false;
+        _isEmailVerified = result['success'] == true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? '이메일 확인 메일이 발송되었습니다. 메일을 확인해주세요.'),
+        ),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('이메일 인증 에러 발생: $e');
+      }
+
+      setState(() {
+        _isEmailVerificationLoading = false;
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('이메일 확인 메일 발송 실패: $e')));
+    }
+  }
+
   // 회원가입 API 호출
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
+    if (!_isEmailVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이메일 확인이 필요합니다. 이메일 확인 버튼을 눌러주세요.')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final result = await AuthService.signup(
         email: widget.userId,
@@ -63,26 +117,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
         bankAccount: _bankAccountController.text,
         bankCode: _bankCodeController.text,
         role: _role,
+        agreedTermsOfService: true,
+        agreedPrivacyCollection: true,
+        agreedElectronicFinance: true,
+        agreedMinorGuardian: _role == 'CHILD' ? true : null,
+        agreedRewardGuardian: _role == 'CHILD' ? true : null,
+        agreedThirdPartySharing: false,
+        agreedDataProcessingDelegation: false,
+        agreedMarketing: false,
       );
-      
+
       // 성공 처리
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('회원가입이 완료되었습니다')),
-        );
-        
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('회원가입이 완료되었습니다')));
+
         // 로그인 화면으로 이동
-        Navigator.pushNamedAndRemoveUntil(
-          context, 
-          '/login', 
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('오류가 발생했습니다: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('오류가 발생했습니다: $e')));
       }
     } finally {
       if (mounted) {
@@ -92,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,10 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          '회원가입',
-          style: TextStyle(color: Colors.black),
-        ),
+        title: const Text('회원가입', style: TextStyle(color: Colors.black)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -119,26 +174,77 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Text(
                   '계정 정보를 입력해주세요',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 30),
-                
+
+                // 이메일 섹션 타이틀과 확인 버튼
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '이메일',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 30,
+                      child: ElevatedButton(
+                        onPressed:
+                            _isEmailVerificationLoading
+                                ? null
+                                : _sendVerificationEmail,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              _isEmailVerified
+                                  ? Colors.green
+                                  : const Color(0xFF4F78FF),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          minimumSize: const Size(70, 30),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 0,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        child:
+                            _isEmailVerificationLoading
+                                ? const SizedBox(
+                                  width: 15,
+                                  height: 15,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : Text(
+                                  _isEmailVerified ? '확인완료' : '이메일 확인',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
                 // 이메일 (표시만)
                 TextFormField(
                   initialValue: widget.userId,
                   enabled: false,
                   decoration: const InputDecoration(
-                    labelText: '이메일',
                     border: OutlineInputBorder(),
                     filled: true,
                     fillColor: Color(0xFFF5F5F5),
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 비밀번호
                 TextFormField(
                   controller: _passwordController,
@@ -148,9 +254,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible 
-                          ? Icons.visibility 
-                          : Icons.visibility_off,
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -170,7 +276,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 이름
                 TextFormField(
                   controller: _nameController,
@@ -186,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 전화번호
                 TextFormField(
                   controller: _phoneController,
@@ -207,17 +313,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 은행 정보
                 const Text(
                   '계좌 정보',
-                  style: TextStyle(
-                    fontSize: 18, 
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 은행명
                 TextFormField(
                   controller: _bankNameController,
@@ -233,7 +336,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 계좌번호
                 TextFormField(
                   controller: _bankAccountController,
@@ -251,7 +354,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 은행 코드
                 TextFormField(
                   controller: _bankCodeController,
@@ -269,17 +372,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
-                
+
                 // 역할 선택
                 const Text(
                   '역할 선택',
-                  style: TextStyle(
-                    fontSize: 18, 
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
-                
+
                 // 라디오 버튼으로 역할 선택
                 ListTile(
                   title: const Text('부모'),
@@ -318,7 +418,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                
+
                 // 회원가입 버튼
                 SizedBox(
                   width: double.infinity,
@@ -332,15 +432,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            '회원가입',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                    child:
+                        _isLoading
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : const Text(
+                              '회원가입',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
                   ),
                 ),
               ],
@@ -350,4 +453,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-} 
+}

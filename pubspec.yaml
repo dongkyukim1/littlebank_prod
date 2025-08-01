@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.7.0
@@ -31,35 +31,76 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.0.0
-  http: ^1.2.0
+  http: ^1.4.0
   dio: ^5.4.0
+  cookie_jar: ^4.0.8
+  dio_cookie_manager: ^3.1.1
   flutter_dotenv: ^5.1.0
-  flutter_secure_storage: ^8.0.0
+  flutter_secure_storage: ^9.0.0
   mime: ^1.0.4
   path: ^1.8.3
+  flutter_datetime_picker_plus: ^2.1.0
+  intl: ^0.19.0
+  # Riverpod 상태관리
+  flutter_riverpod: ^2.6.1
+  # Freezed 모델 생성
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+  stomp_dart_client: ^1.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^1.0.6
   google_fonts: ^6.1.0
-  intl: ^0.20.2
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.3
   flutter_svg: ^2.0.10+1
   percent_indicator: ^4.2.3
-  image_picker: ^1.0.4
+  image_picker: ^1.0.5
   cached_network_image: ^3.4.1
   video_player: ^2.9.5
-  video_thumbnail: ^0.5.3
   path_provider: ^2.1.5
   # 카카오 로그인
   kakao_flutter_sdk: ^1.9.7+3
   kakao_flutter_sdk_user: ^1.9.7+3
+  # 공유 기능
+  share_plus: ^10.0.0
+  url_launcher: ^6.0.0
+  # 딥링크 처리
+  app_links: ^6.3.3
   logging: ^1.3.0
-  flutter_naver_login: ^2.0.0
+  visibility_detector: ^0.4.0+2
+  firebase_core: ^3.13.0
+  firebase_messaging: ^15.2.5
+  flutter_local_notifications: ^19.2.0
+  flutter_naver_login: ^2.1.1 # 네이버 로그인 SDK 추가
+  portone_flutter: 0.12.0
+  # PDF 생성 관련 패키지들
+  pdf: ^3.11.1
+  printing: ^5.13.4
+  open_file: ^3.5.7
+  riverpod_annotation: ^2.6.1
+  hooks_riverpod: ^2.6.1
+  build_runner: ^2.4.15
+  riverpod_generator: ^2.6.4
+  # Google Play Billing
+  in_app_purchase: ^3.2.0
+  # 웹뷰를 통한 네이버 로그인 대안
+  webview_flutter: ^4.5.0
+  # QR 코드 생성
+  qr_flutter: ^4.1.0
+  # 토스페이먼츠 Flutter SDK (최신 버전)
+  tosspayments_widget_sdk_flutter: ^2.1.1
+  # 토스페이먼츠 SDK 의존성 (버전 맞춤)
+  flutter_inappwebview: ^6.1.5
+  device_info_plus: ^11.5.0
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # 코드 생성 도구
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -88,15 +129,46 @@ flutter:
     - assets/images/study_flag.png
     - assets/logos/
     - assets/icons/
+    - assets/icons/Icon/profile/
+    - assets/icons/background_chat/
+    - assets/icons/background_chat/album.png
     - assets/icons/Icon/
+    - assets/icons/Icon/member_manage/
+    - assets/icons/Icon/set/
     - assets/icons/Icon/알림/
     - assets/icons/Icon/검색/
     - assets/icons/Icon/뒤로 가기/
-    - assets/icons/Icon/설정/
     - assets/icons/Icon/메시지 작성/
-    - assets/icons/Icon/채팅보내기/
+    - assets/icons/Icon/delete/
     - assets/icons/Icon/kakao/
+    - assets/icons/my/
     - assets/poster/
+    - assets/icons/Icon/chat/
+    - assets/icons/Icon/help/
+    - assets/icons/Icon/feed/
+    - assets/icons/Icon/mission/
+    - assets/icons/Icon/noti/
+    - assets/icons/notice/
+    - assets/icons/parent/
+    - assets/icons/parent/goal/
+    - assets/icons/parent/noti/
+    - assets/icons/parent/info/
+    - assets/icons/parent/my/
+    - assets/icons/parent/nav/
+    - assets/icons/parent/mission/
+    - assets/icons/parent/challenge/
+    - assets/icons/parent/analysis/
+    - assets/icons/parent/my/
+    - assets/icons/parent/my/point/
+    - assets/icons/parent/my/balance/
+    - assets/icons/parent/my/charge/
+    - assets/icons/parent/my/recommend/
+    - assets/icons/parent/my/report/
+    - assets/icons/parent/my/delete/
+    - assets/icons/parent/my/delete/logo.png
+    - assets/icons/parent/bank/
+    - assets/icons/parent/my/cs_service/
+    - assets/icons/Icon/home/
     - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -127,13 +199,77 @@ flutter:
 
   # 폰트 추가
   fonts:
+    # 스포카 한 산스만 먼저 테스트
     - family: Pretendard
       fonts:
-        - asset: assets/fonts/Pretendard-Light.ttf
+        - asset: assets/fonts/Pretendard-Thin.otf
+          weight: 100
+          style: normal
+        - asset: assets/fonts/Pretendard-ExtraLight.otf
+          weight: 200
+          style: normal
+        - asset: assets/fonts/Pretendard-Light.otf
           weight: 300
-        - asset: assets/fonts/Pretendard-Regular.ttf
+          style: normal
+        - asset: assets/fonts/Pretendard-Regular.otf
           weight: 400
-        - asset: assets/fonts/Pretendard-Medium.ttf
+          style: normal
+        - asset: assets/fonts/Pretendard-Medium.otf
           weight: 500
+          style: normal
+        - asset: assets/fonts/Pretendard-SemiBold.otf
+          weight: 600
+          style: normal
+        - asset: assets/fonts/Pretendard-Bold.otf
+          weight: 700
+          style: normal
+        - asset: assets/fonts/Pretendard-ExtraBold.otf
+          weight: 800
+          style: normal
+        - asset: assets/fonts/Pretendard-Black.otf
+          weight: 900
+          style: normal
+    
+    # PDF용 TTF 폰트 추가
+    - family: PretendardTTF
+      fonts:
+        - asset: assets/fonts/Pretendard-Regular.ttf
         - asset: assets/fonts/Pretendard-Bold.ttf
           weight: 700
+          
+    # 각 웨이트별 별도 패밀리 등록 (대체용)
+    - family: Pretendard-Thin
+      fonts:
+        - asset: assets/fonts/Pretendard-Thin.otf
+    
+    - family: Pretendard-ExtraLight
+      fonts:
+        - asset: assets/fonts/Pretendard-ExtraLight.otf
+    
+    - family: Pretendard-Light
+      fonts:
+        - asset: assets/fonts/Pretendard-Light.otf
+    
+    - family: Pretendard-Regular
+      fonts:
+        - asset: assets/fonts/Pretendard-Regular.otf
+    
+    - family: Pretendard-Medium
+      fonts:
+        - asset: assets/fonts/Pretendard-Medium.otf
+    
+    - family: Pretendard-SemiBold
+      fonts:
+        - asset: assets/fonts/Pretendard-SemiBold.otf
+    
+    - family: Pretendard-Bold
+      fonts:
+        - asset: assets/fonts/Pretendard-Bold.otf
+    
+    - family: Pretendard-ExtraBold
+      fonts:
+        - asset: assets/fonts/Pretendard-ExtraBold.otf
+    
+    - family: Pretendard-Black
+      fonts:
+        - asset: assets/fonts/Pretendard-Black.otf

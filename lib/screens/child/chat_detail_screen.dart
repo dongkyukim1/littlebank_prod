@@ -1,19 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import '../../theme/app_colors.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:isolate';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
+import '../../services/chat_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/relationship_service.dart';
+import '../../services/chat_background_service.dart';
+import '../../models/chat_message.dart';
+import '../../widgets/chat/chat_message_item.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'chat/friend_list_screen.dart';
+import 'chat/detail/chat_room_menu_screen.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final String userName;
   final String avatar;
+  final int roomId;
+  final int userId;
 
   const ChatDetailScreen({
     super.key,
     required this.userName,
     required this.avatar,
+    required this.roomId,
+    required this.userId,
   });
 
   @override
@@ -22,358 +38,1106 @@ class ChatDetailScreen extends StatefulWidget {
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _showQuickReplies = false;
-  String _selectedQuickReply = ""; // 기본 선택 효과 제거
-  
-  // 이미지 선택 관련
+  String _selectedQuickReply = "";
   final ImagePicker _picker = ImagePicker();
-  
-  // 비디오 플레이어 관련
   VideoPlayerController? _videoController;
   bool _isVideoInitialized = false;
-  
-  // 타이머 관련 변수
   Timer? _timer;
   Duration _timeRemaining = const Duration(hours: 7, minutes: 9, seconds: 39);
   String _timerText = '수락까지 07:09:39';
+  bool _isLoading = false;
+  int? _currentUserId;
+  String? _backgroundImagePath;
+
+  // 검색 관련 변수들
+  bool _isSearching = false;
+  String _searchQuery = '';
+  List<int> _searchResults = [];
+  int _currentSearchIndex = -1;
+
+  // 디버그 로그 (제거됨)
+  List<String> _debugLogs = [];
+
+  // 채팅방 정보
+  String _roomName = '';
 
   @override
   void initState() {
     super.initState();
-    // 초기 메시지 샘플 추가
-    _addSampleMessages();
-    // 타이머 시작
+    print('🚀🚀🚀🚀🚀 [ChatDetailScreen] initState 실행됨! 🚀🚀🚀🚀🚀');
+    print('🚀🚀🚀🚀🚀 채팅방 ID: ${widget.roomId} 🚀🚀🚀🚀🚀');
+    print('🚀🚀🚀🚀🚀 _initializeChat() 호출 직전 🚀🚀🚀🚀🚀');
+    _initializeChat();
     _startTimer();
+    print('🚀🚀🚀🚀🚀 initState 완료! 🚀🚀🚀🚀🚀');
   }
-  
+
   @override
   void dispose() {
-    // 타이머 정리
     _timer?.cancel();
+    _messageController.dispose();
+    _scrollController.dispose();
+
+    print('=== 🔌 채팅방 나가기 시작 ===');
+    print('채팅방 ID: ${widget.roomId}');
+
+    // 채팅방 나가기 전 마지막 읽음 처리 시도
+    _performFinalReadProcessing();
+
+    // WebSocket 구독 해제
+    ChatService.unsubscribeFromChatRoom(widget.roomId);
+    ChatService.unsubscribeFromMessageRead(widget.roomId);
+
+    print('구독 해제 후 상태:');
+    ChatService.printSubscriptionStatus();
+
     super.dispose();
   }
-  
-  // 타이머 시작 메서드
+
+  // WebSocket 우선, 실패 시 REST API로 읽음 처리 시도
+  Future<bool> _sendReadWithFallback(List<int> messageIds) async {
+    if (messageIds.isEmpty) return true;
+
+    try {
+      print('📖 WebSocket을 통한 읽음 처리 시도...');
+
+      // 1차: WebSocket을 통한 읽음 처리 시도
+      final webSocketSuccess = await ChatService.sendMessageRead(
+        roomId: widget.roomId,
+        messageIds: messageIds,
+      );
+
+      if (webSocketSuccess) {
+        print('✅ WebSocket 읽음 처리 성공');
+        return true;
+      }
+
+      print('⚠️ WebSocket 읽음 처리 실패 - REST API로 개별 처리 시도');
+
+      // 2차: REST API를 통한 개별 읽음 처리 시도
+      int successCount = 0;
+      for (final messageId in messageIds) {
+        try {
+          final success = await ChatService.markMessageAsRead(messageId);
+          if (success) {
+            successCount++;
+            print('✅ REST API 개별 읽음 처리 성공: messageId $messageId');
+          } else {
+            print('❌ REST API 개별 읽음 처리 실패: messageId $messageId');
+          }
+
+          // 과도한 API 호출 방지를 위한 짧은 대기
+          await Future.delayed(const Duration(milliseconds: 100));
+        } catch (e) {
+          print('❌ REST API 개별 읽음 처리 중 오류: messageId $messageId, 오류: $e');
+        }
+      }
+
+      final allSuccess = successCount == messageIds.length;
+      print('📖 REST API 읽음 처리 결과: $successCount/${messageIds.length} 성공');
+
+      if (successCount > 0) {
+        print('✅ 부분적 읽음 처리 성공 (${successCount}개)');
+        return true; // 일부라도 성공하면 true 반환
+      }
+
+      return false;
+    } catch (e) {
+      print('❌ 읽음 처리 대체 방법 중 오류: $e');
+      return false;
+    }
+  }
+
+  // 채팅방 나가기 전 마지막 읽음 처리
+  void _performFinalReadProcessing() {
+    if (_currentUserId == null || _messages.isEmpty) {
+      print('⚠️ 마지막 읽음 처리 건너뜀 - 사용자 ID 없음 또는 메시지 없음');
+      return;
+    }
+
+    try {
+      print('=== 📖 채팅방 나가기 전 마지막 읽음 처리 시작 ===');
+
+      // 현재 화면에 있는 모든 메시지 중 내가 보내지 않은 메시지들 찾기
+      final unreadMessages =
+          _messages.where((message) {
+            return message.messageId != null &&
+                message.senderUserId != _currentUserId && // 내가 보낸 메시지 제외
+                message.senderUserId != 0; // 시스템 메시지 제외
+          }).toList();
+
+      if (unreadMessages.isNotEmpty) {
+        final messageIds = unreadMessages.map((msg) => msg.messageId!).toList();
+        print('📖 마지막 읽음 처리할 메시지 IDs: $messageIds');
+
+        // 비동기 읽음 처리 (dispose 중이므로 await 하지 않음)
+        ChatService.sendMessageRead(
+              roomId: widget.roomId,
+              messageIds: messageIds,
+            )
+            .then((success) {
+              if (success) {
+                print('✅ 채팅방 나가기 전 마지막 읽음 처리 성공: ${messageIds.length}개');
+              } else {
+                print('❌ 채팅방 나가기 전 마지막 읽음 처리 실패');
+              }
+            })
+            .catchError((error) {
+              print('❌ 채팅방 나가기 전 읽음 처리 중 오류: $error');
+            });
+      } else {
+        print('📖 마지막 읽음 처리할 메시지가 없음');
+      }
+
+      print('=== 📖 채팅방 나가기 전 마지막 읽음 처리 완료 ===');
+    } catch (e) {
+      print('❌ 마지막 읽음 처리 중 오류: $e');
+    }
+  }
+
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_timeRemaining.inSeconds > 0) {
-          _timeRemaining = _timeRemaining - const Duration(seconds: 1);
-          _updateTimerText();
-        } else {
-          _timer?.cancel();
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (_timeRemaining.inSeconds > 0) {
+            _timeRemaining = _timeRemaining - const Duration(seconds: 1);
+            _updateTimerText();
+          } else {
+            _timer?.cancel();
+          }
+        });
+      }
     });
   }
-  
-  // 타이머 텍스트 업데이트
+
   void _updateTimerText() {
     final hours = _timeRemaining.inHours;
     final minutes = _timeRemaining.inMinutes.remainder(60);
     final seconds = _timeRemaining.inSeconds.remainder(60);
-    
-    _timerText = '수락까지 ${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    
-    // missionData의 timeRecorded 값도 함께 업데이트
+
+    _timerText =
+        '수락까지 ${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+
     for (var message in _messages) {
-      if (message.messageType == MessageType.missionCard && message.missionData != null) {
-        message.missionData!['timeRecorded'] = _timerText;
+      if (message.messageType == MessageType.missionCard &&
+          message.missionData != null) {
+        final missionData = Map<String, dynamic>.from(message.missionData!);
+        missionData['timeRecorded'] = _timerText;
+        message = message.copyWith(missionData: missionData);
       }
     }
   }
 
-  void _addSampleMessages() {
-    _messages.add(
-      ChatMessage(
-        text: "안녕하세요, ${widget.userName}님!",
-        isMe: false,
-        time: "09:30",
-        messageType: MessageType.text,
-      ),
-    );
+  Future<void> _initializeChat() async {
+    if (!mounted) return;
 
-    _messages.add(
-      ChatMessage(
-        text: "이번 주 미션을 보내드립니다",
-        isMe: false,
-        time: "12:30",
-        messageType: MessageType.text,
-      ),
-    );
+    setState(() => _isLoading = true);
 
-    // 미션 카드 메시지 추가
-    _messages.add(
-      ChatMessage(
-        text: "",
-        isMe: false,
-        time: "12:30",
-        messageType: MessageType.missionCard,
-        missionData: {
-          'type': '3월 셋째주 미션',
-          'title': '수학 5단원까지 풀어오기',
-          'reward': '30,000원',
-          'period': '3.20 - 3.27',
-          'progress': '70%',
-          'timeRecorded': _timerText,
-        },
-      ),
-    );
+    try {
+      final userInfo = await AuthService.getUserInfo();
+      if (!mounted) return;
 
-    _messages.add(
-      ChatMessage(
-        text: "이번 주 수학은 꼭 마스터해야 합니다",
-        isMe: false,
-        time: "12:30",
-        messageType: MessageType.text,
-      ),
-    );
+      if (userInfo != null && userInfo['userId'] != null) {
+        setState(() {
+          _currentUserId = userInfo['userId'];
+        });
+        print('=== 🔍 채팅 초기화 디버그 ===');
+        print('현재 사용자 ID: ${_currentUserId}');
+        print('채팅방 ID: ${widget.roomId}');
+      }
 
-    _messages.add(
-      ChatMessage(
-        text: "열심히 해볼게요!",
-        isMe: true,
-        time: "12:30",
-        messageType: MessageType.text,
-      ),
-    );
+      // 채팅방 배경 로드
+      final backgroundPath =
+          await ChatBackgroundService.getBackgroundImagePath();
+      if (mounted) {
+        setState(() {
+          _backgroundImagePath = backgroundPath;
+        });
+      }
 
-    _messages.add(
-      ChatMessage(
-        text: "이번 주 숙제는 꼭 미리지 않길 바란다~",
-        isMe: false,
-        time: "12:30",
-        messageType: MessageType.text,
-      ),
-    );
+      // WebSocket 과부하 방지: 기존 구독들 정리
+      print('🧹 WebSocket 구독 정리 시작...');
+      ChatService.printSubscriptionStatus(); // 현재 상태 확인
 
-    // 최신 메시지가 상대방이고 텍스트 메시지면 자동 응답 표시
-    if (_messages.isNotEmpty && !_messages.last.isMe) {
+      // 과도한 구독 정리 (최대 5개까지만 유지)
+      ChatService.cleanupExcessiveSubscriptions(maxSubscriptions: 5);
+
+      print('🧹 구독 정리 완료');
+      ChatService.printSubscriptionStatus(); // 정리 후 상태 확인
+
+      print('WebSocket 초기화 시작...');
+      await ChatService.initializeWebSocket();
+
+      // 이전 메시지 먼저 로드 (WebSocket 구독은 _loadChatRoomDetails에서 처리)
+      print('💡💡💡 [하이브리드] 이전 메시지 로드 시작 💡💡💡');
+      print('💡💡💡 채팅방 ID: ${widget.roomId} 💡💡💡');
+
+      await _loadChatRoomDetails();
+    } catch (e) {
+      print('❌ 채팅 초기화 실패: $e');
+      if (!mounted) return;
+
       setState(() {
-        _showQuickReplies = true;
+        _isLoading = false;
+        _debugLogs.add('초기화 실패: $e');
+        if (_debugLogs.length > 10) {
+          _debugLogs.removeAt(0);
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('채팅을 초기화하는데 실패했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadChatRoomDetails({bool setupWebSocket = true}) async {
+    print('📥 채팅방 상세 정보 로드 시작');
+    try {
+      // 서버에서 lastSendMessageId 받아오기
+      final roomDetails = await ChatService.getChatRoomDetails(widget.roomId);
+      int lastMessageId = 999999; // 기본값을 더 큰 값으로 설정
+
+      // 채팅방 정보 먼저 업데이트 (메시지 로드 실패와 무관하게)
+      if (roomDetails != null && mounted) {
+        final roomRange = roomDetails['roomRange'];
+        final participantCount = roomDetails['participantCount'] ?? 0;
+        final participantNameList =
+            roomDetails['participantNameList'] as List<dynamic>? ?? [];
+
+        setState(() {
+          _roomName = roomDetails['roomName'] ?? widget.userName;
+        });
+
+        print('🔍 채팅방 roomRange: $roomRange');
+        print('🔍 채팅방 참여자 수: $participantCount');
+        print(
+          '🔍 채팅방 참여자 이름 목록: $participantNameList (${participantNameList.length}명)',
+        );
+        print('🔍 채팅방 이름: $_roomName');
+      }
+
+      if (roomDetails != null && roomDetails['lastSendMessageId'] is int) {
+        lastMessageId =
+            roomDetails['lastSendMessageId'] + 1; // +1을 추가해서 최신 메시지까지 포함
+        print(
+          '🔍 서버에서 받은 lastSendMessageId: ${roomDetails['lastSendMessageId']}',
+        );
+        print('🔍 조회에 사용할 lastMessageId: $lastMessageId');
+      }
+
+      print('🔍 모든 메시지 로드 시작 - lastMessageId: $lastMessageId');
+
+      // 모든 메시지를 가져오기 위해 페이징 반복
+      List<ChatMessage> allMessages = [];
+      Set<int> addedMessageIds = {}; // 중복 방지를 위한 Set
+      int currentPage = 0;
+      bool hasMoreMessages = true;
+      int? startMessageId;
+      int? endMessageId;
+      int totalPages = 0;
+      bool messageLoadFailed = false;
+
+      while (hasMoreMessages) {
+        try {
+          final messages = await ChatService.getChatRoomMessages(
+            widget.roomId,
+            lastMessageId: lastMessageId,
+            pageNumber: currentPage,
+          );
+
+          print('🔍 페이지 $currentPage 조회 완료 - 메시지 수: ${messages.length}');
+
+          if (messages.isEmpty) {
+            hasMoreMessages = false;
+          } else {
+            // 서버에서 중복 데이터가 올 수 있으므로 messageId로 중복 제거
+            int addedInThisPage = 0;
+            for (final message in messages) {
+              final messageId = message.messageId;
+              if (messageId != null && !addedMessageIds.contains(messageId)) {
+                allMessages.add(message);
+                addedMessageIds.add(messageId);
+                addedInThisPage++;
+                print('✅ 메시지 추가: ID=$messageId, 내용="${message.content}"');
+              } else if (messageId != null) {
+                print('⚠️ 중복 메시지 제거: ID=$messageId, 내용="${message.content}"');
+              } else {
+                print('⚠️ messageId가 null인 메시지 제거: 내용="${message.content}"');
+              }
+            }
+
+            print('🔍 페이지 $currentPage - 실제 추가된 메시지: $addedInThisPage개');
+
+            // 이벤트 로그 조회를 위한 정보 저장
+            if (currentPage == 0) {
+              totalPages = currentPage + 1; // 첫 페이지는 최소 1
+            } else {
+              totalPages = currentPage + 1;
+            }
+
+            currentPage++;
+
+            // 안전장치: 너무 많은 페이지 방지 (최대 50페이지)
+            if (currentPage >= 50) {
+              print('⚠️ 최대 페이지 수 도달로 로드 중단');
+              hasMoreMessages = false;
+            }
+          }
+        } catch (e) {
+          print('❌ 메시지 조회 실패 (페이지 $currentPage): $e');
+          messageLoadFailed = true;
+          hasMoreMessages = false;
+
+          // 메시지 로드 실패해도 채팅방 정보는 유지하고 빈 상태로 처리
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+              _debugLogs.add('메시지 조회 실패: $e');
+              if (_debugLogs.length > 10) {
+                _debugLogs.removeAt(0);
+              }
+            });
+
+            // 사용자에게 메시지 로드 실패 알림
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('메시지를 불러오는데 실패했습니다. 새로고침해주세요.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      }
+
+      print('🔍 전체 메시지 로드 완료 - 총 메시지 수: ${allMessages.length}');
+
+      if (!mounted) return;
+
+      // messageId 기준으로 오름차순 정렬 (오래된 메시지가 앞, 최신 메시지가 뒤)
+      allMessages.sort((a, b) {
+        final aId = a.messageId ?? 0;
+        final bId = b.messageId ?? 0;
+        return aId.compareTo(bId);
+      });
+
+      print('🔄 메시지 ID 기준 정렬 완료');
+      if (allMessages.isNotEmpty) {
+        print('정렬 후 첫 번째 메시지 ID: ${allMessages.first.messageId}');
+        print('정렬 후 마지막 메시지 ID: ${allMessages.last.messageId}');
+
+        // 이벤트 로그 조회를 위한 파라미터 설정
+        startMessageId = allMessages.first.messageId ?? 0; // 가장 오래된 메시지
+        endMessageId = allMessages.last.messageId ?? 0; // 가장 최근 메시지
+      }
+
+      // 📜 채팅방 이벤트 로그 조회 (메시지 조회 직후)
+      List<Map<String, dynamic>> eventLogs = [];
+      if (allMessages.isNotEmpty) {
+        print('📜 채팅방 이벤트 로그 조회 시작...');
+
+        // 메시지 데이터를 Map 형태로 변환
+        final messageDataForLog =
+            allMessages
+                .map(
+                  (msg) => {
+                    'messageId': msg.messageId,
+                    'content': msg.content,
+                    'timestamp': msg.time,
+                  },
+                )
+                .toList();
+
+        final logs = await ChatService.getChatEventLogs(
+          widget.roomId,
+          totalPages: totalPages,
+          messageData: messageDataForLog,
+        );
+
+        if (logs != null) {
+          eventLogs = logs;
+          print('📜 이벤트 로그 ${eventLogs.length}개 조회 완료');
+
+          // 이벤트 로그를 시스템 메시지로 변환하여 메시지 목록에 추가
+          for (final log in eventLogs) {
+            final eventMessage = ChatMessage(
+              messageId: null, // 시스템 메시지는 ID 없음
+              content: log['message'] ?? '시스템 메시지',
+              messageType: MessageType.text,
+              time: log['timestamp'] ?? DateTime.now().toIso8601String(),
+              readCount: 0,
+              senderUserId: 0, // 시스템 메시지
+              senderName: '시스템',
+              senderProfileImageUrl: null,
+              isFriend: false,
+              customName: null,
+              isBestFriend: false,
+              isBlocked: false,
+            );
+
+            // 시간 순으로 적절한 위치에 삽입
+            final eventTime = DateTime.tryParse(eventMessage.time);
+            if (eventTime != null) {
+              int insertIndex = allMessages.indexWhere((msg) {
+                final msgTime = DateTime.tryParse(msg.time);
+                return msgTime != null && msgTime.isAfter(eventTime);
+              });
+              if (insertIndex == -1) {
+                allMessages.add(eventMessage); // 맨 뒤에 추가
+              } else {
+                allMessages.insert(insertIndex, eventMessage); // 시간순 위치에 삽입
+              }
+            }
+          }
+        } else {
+          print('📜 이벤트 로그 조회 실패');
+        }
+      }
+
+      // 메시지 업데이트를 한 번에 처리하여 렌더링 최적화
+      _messages.clear(); // 기존 메시지 초기화
+      _messages.addAll(allMessages); // 오래된 메시지가 위, 최신 메시지가 아래로 정순 정렬
+
+      // 디버깅용 로그
+      _debugLogs.add('전체 메시지 ${allMessages.length}개 로드됨 (${totalPages}페이지)');
+      _debugLogs.add('이벤트 로그 ${eventLogs.length}개 조회됨');
+      if (messageLoadFailed) {
+        _debugLogs.add('⚠️ 메시지 조회 중 서버 오류 발생');
+      }
+      if (_debugLogs.length > 10) {
+        _debugLogs.removeAt(0);
+      }
+
+      print('📥 전체 메시지 로드 완료: ${allMessages.length}개');
+      if (allMessages.isNotEmpty) {
+        print('첫 번째 메시지 ID: ${allMessages.first.messageId}');
+        print('마지막 메시지 ID: ${allMessages.last.messageId}');
+      }
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+
+      // WebSocket 구독 설정이 필요한 경우에만 실행
+      if (setupWebSocket) {
+        print('💡💡💡 [하이브리드] 메시지 로드 완료 후 WebSocket 구독 시작 💡💡💡');
+        await _setupWebSocketSubscription();
+      } else {
+        print('💡💡💡 [하이브리드] 메시지만 다시 로드됨 (WebSocket 구독 유지) 💡💡💡');
+      }
+
+      // 채팅방 진입 시 안읽은 메시지들 읽음 처리
+      if (setupWebSocket && !messageLoadFailed) {
+        await _markUnreadMessagesAsRead();
+      }
+
+      // 메시지 로드 완료 후 맨 아래로 즉시 스크롤 (더 빠르게)
+      if (_scrollController.hasClients && _messages.isNotEmpty) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    } catch (e, stackTrace) {
+      print('❌ 채팅방 상세 정보 로드 실패: $e');
+      print('❌ 스택 트레이스: $stackTrace');
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _debugLogs.add('로드 실패: $e');
+        if (_debugLogs.length > 10) {
+          _debugLogs.removeAt(0);
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('메시지를 불러오는데 실패했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // 채팅방 진입 시 안읽은 메시지들 읽음 처리
+  Future<void> _markUnreadMessagesAsRead() async {
+    if (_currentUserId == null || _messages.isEmpty) {
+      print('⚠️ 읽음 처리 건너뜀 - 사용자 ID 없음 또는 메시지 없음');
+      return;
+    }
+
+    try {
+      print('=== 📖 채팅방 진입 시 안읽은 메시지 읽음 처리 시작 ===');
+
+      // 채팅방 상세 정보에서 마지막 읽은 메시지 ID 가져오기
+      final roomDetails = await ChatService.getChatRoomDetails(widget.roomId);
+      if (roomDetails == null) {
+        print('❌ 채팅방 상세 정보 조회 실패');
+        return;
+      }
+
+      final lastReadMessageId = roomDetails['lastReadMessageId'] as int? ?? 0;
+      print('📖 마지막 읽은 메시지 ID: $lastReadMessageId');
+
+      // 마지막 읽은 메시지 이후의 안읽은 메시지들 찾기 (내가 보낸 메시지 제외)
+      final unreadMessages =
+          _messages.where((message) {
+            return message.messageId != null &&
+                message.messageId! > lastReadMessageId &&
+                message.senderUserId != _currentUserId && // 내가 보낸 메시지 제외
+                message.senderUserId != 0; // 시스템 메시지 제외
+          }).toList();
+
+      if (unreadMessages.isNotEmpty) {
+        final unreadMessageIds =
+            unreadMessages.map((msg) => msg.messageId!).toList();
+        print('📖 읽음 처리할 안읽은 메시지 IDs: $unreadMessageIds');
+
+        // WebSocket 읽음 처리 API 호출
+        final success = await ChatService.sendMessageRead(
+          roomId: widget.roomId,
+          messageIds: unreadMessageIds,
+        );
+
+        if (success) {
+          print('✅ 채팅방 진입 시 안읽은 메시지 ${unreadMessageIds.length}개 읽음 처리 완료');
+
+          if (mounted) {
+            setState(() {
+              _debugLogs.add('진입 시 읽음 처리: ${unreadMessageIds.length}개 메시지');
+              if (_debugLogs.length > 10) {
+                _debugLogs.removeAt(0);
+              }
+            });
+          }
+        } else {
+          print('❌ 채팅방 진입 시 안읽은 메시지 읽음 처리 실패 (WebSocket 문제일 수 있음)');
+
+          if (mounted) {
+            setState(() {
+              _debugLogs.add('읽음 처리 실패: WebSocket 연결 문제');
+              if (_debugLogs.length > 10) {
+                _debugLogs.removeAt(0);
+              }
+            });
+          }
+        }
+      } else {
+        print('📖 읽을 안읽은 메시지가 없음');
+      }
+
+      print('=== 📖 채팅방 진입 시 안읽은 메시지 읽음 처리 완료 ===');
+    } catch (e) {
+      print('❌ 안읽은 메시지 읽음 처리 중 오류: $e');
+
+      if (mounted) {
+        setState(() {
+          _debugLogs.add('읽음 처리 오류: $e');
+          if (_debugLogs.length > 10) {
+            _debugLogs.removeAt(0);
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _setupWebSocketSubscription() async {
+    try {
+      print('🔌 WebSocket 구독 설정 시작');
+
+      // 현재 사용자 정보 확인
+      final userInfo = await AuthService.getUserInfo();
+      final userId = userInfo?['userId'];
+      print('현재 사용자 ID: $userId');
+      print('채팅방 ID: ${widget.roomId}');
+      print('위젯에서 받은 userId: ${widget.userId}');
+
+      if (userId == null) {
+        print('❌ 사용자 ID를 가져올 수 없습니다.');
+        return;
+      }
+
+      // 구독 경로 확인
+      final expectedMessagePath = '/sub/chat/${widget.roomId}/$userId';
+      final expectedReadPath = '/sub/chat/read/${widget.roomId}';
+      print('예상 메시지 구독 경로: $expectedMessagePath');
+      print('예상 읽음 처리 구독 경로: $expectedReadPath');
+
+      // 사용자 ID와 위젯 userId 비교
+      if (userId != widget.userId) {
+        print('⚠️ 사용자 ID 불일치: AuthService=$userId, Widget=${widget.userId}');
+      }
+
+      // 구독 전 상태 확인
+      print('구독 전 WebSocket 상태:');
+      ChatService.printSubscriptionStatus();
+
+      // 채팅방 메시지 구독
+      print('📡 메시지 구독 시작...');
+      await ChatService.subscribeToChatRoom(
+        widget.roomId,
+        _handleMessageReceived,
+      );
+
+      // 메시지 읽음 처리 구독
+      print('📖 읽음 처리 구독 시작...');
+      await ChatService.subscribeToMessageRead(
+        widget.roomId,
+        _handleMessageReadReceived,
+      );
+
+      // 채팅방 초대 알림 구독
+      print('👥 초대 알림 구독 시작...');
+      await ChatService.subscribeToRoomInvite(
+        widget.roomId,
+        _handleRoomInviteReceived,
+      );
+
+      // 채팅방 나가기 알림 구독
+      print('🚪 나가기 알림 구독 시작...');
+      print('🚪 나가기 알림 구독 경로: /sub/chat/room-leave/${widget.roomId}/$userId');
+      print('🚪 나가기 알림이 수신되면 _handleRoomLeaveReceived 호출됨');
+      await ChatService.subscribeToRoomLeave(
+        widget.roomId,
+        _handleRoomLeaveReceived,
+      );
+      print('🚪 나가기 알림 구독 완료');
+
+      // 구독 후 상태 확인
+      print('구독 후 WebSocket 상태:');
+      ChatService.printSubscriptionStatus();
+
+      print('✅ WebSocket 구독 설정 완료');
+
+      if (mounted) {
+        setState(() {
+          _debugLogs.add('WebSocket 구독 완료 - 경로: $expectedMessagePath');
+          if (_debugLogs.length > 10) {
+            _debugLogs.removeAt(0);
+          }
+        });
+      }
+
+      // 테스트 메시지 확인을 위한 추가 로깅
+      print('🧪 WebSocket 테스트 - 이제 메시지를 보내면 실시간으로 수신되어야 합니다.');
+      print('🧪 구독된 경로: $expectedMessagePath, $expectedReadPath');
+
+      // 구독 후 1초 뒤에 상태 재확인
+      Future.delayed(const Duration(seconds: 1), () {
+        print('🔍 1초 후 구독 상태 재확인:');
+        ChatService.printSubscriptionStatus();
+      });
+    } catch (e) {
+      print('❌ WebSocket 구독 설정 실패: $e');
+
+      if (mounted) {
+        setState(() {
+          _debugLogs.add('WebSocket 구독 실패: $e');
+          if (_debugLogs.length > 10) {
+            _debugLogs.removeAt(0);
+          }
+        });
+      }
+    }
+  }
+
+  void _handleMessageReceived(Map<String, dynamic> messageData) {
+    print('📩 메시지 수신됨: $messageData');
+
+    if (!mounted) {
+      print('❌ 위젯이 마운트되지 않은 상태에서 메시지 수신');
+      return;
+    }
+
+    try {
+      // 시간 포맷팅을 위해 JSON 데이터 수정
+      final modifiedMessageData = Map<String, dynamic>.from(messageData);
+      if (modifiedMessageData.containsKey('timestamp')) {
+        modifiedMessageData['timestamp'] = _formatTime(
+          modifiedMessageData['timestamp'],
+        );
+      }
+
+      final message = ChatMessage.fromJson(modifiedMessageData);
+      print('✅ 메시지 파싱 성공: ${message.toString()}');
+
+      // 중복 메시지 확인 - messageId로 중복 체크
+      final isDuplicate = _messages.any(
+        (existingMessage) => existingMessage.messageId == message.messageId,
+      );
+
+      if (isDuplicate) {
+        print('⚠️ 중복 메시지 감지됨 - messageId: ${message.messageId}');
+        _debugLogs.add('중복 메시지 무시됨: ${message.messageId}');
+        return;
+      }
+
+      // 메시지 추가를 한 번에 처리하여 렌더링 최적화
+      _messages.add(message); // 최신 메시지를 맨 아래에 추가
+      _debugLogs.add('새 메시지 추가됨: ${message.messageId}');
+
+      // 디버그 로그가 10개를 넘으면 제거
+      if (_debugLogs.length > 10) {
+        _debugLogs.removeAt(0);
+      }
+
+      // 메시지 ID 기준으로 다시 정렬 (안전장치)
+      _messages.sort((a, b) {
+        final aId = a.messageId ?? 0;
+        final bId = b.messageId ?? 0;
+        return aId.compareTo(bId);
+      });
+
+      // 디버깅용 로그
+      print('현재 메시지 수: ${_messages.length}');
+      print('새로 추가된 메시지 ID: ${message.messageId}');
+      if (_messages.isNotEmpty) {
+        print('정렬 후 마지막 메시지 ID: ${_messages.last.messageId}');
+      }
+
+      if (mounted) {
+        setState(() {
+          // UI 업데이트만 트리거
+        });
+      }
+
+      // 새로운 메시지 즉시 읽음 처리 (내가 보낸 메시지가 아닌 경우만)
+      if (message.senderUserId != _currentUserId && message.messageId != null) {
+        print('📖 새 메시지 즉시 읽음 처리 시작 - messageId: ${message.messageId}');
+
+        Future.delayed(const Duration(milliseconds: 500), () async {
+          if (mounted) {
+            final success = await ChatService.sendMessageRead(
+              roomId: widget.roomId,
+              messageIds: [message.messageId!],
+            );
+
+            if (success) {
+              print('✅ 새 메시지 읽음 처리 완료 - messageId: ${message.messageId}');
+
+              setState(() {
+                _debugLogs.add('새 메시지 읽음 처리: ${message.messageId}');
+                if (_debugLogs.length > 10) {
+                  _debugLogs.removeAt(0);
+                }
+              });
+            } else {
+              print(
+                '❌ 새 메시지 읽음 처리 실패 - messageId: ${message.messageId} (WebSocket 문제)',
+              );
+
+              setState(() {
+                _debugLogs.add('새 메시지 읽음 처리 실패: ${message.messageId}');
+                if (_debugLogs.length > 10) {
+                  _debugLogs.removeAt(0);
+                }
+              });
+            }
+          }
+        });
+      }
+
+      // 스크롤을 맨 아래로 즉시 이동 (더 빠르게)
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    } catch (e) {
+      print('❌ 메시지 처리 중 오류 발생: $e');
+      _debugLogs.add('메시지 처리 오류: $e');
+      if (_debugLogs.length > 10) {
+        _debugLogs.removeAt(0);
+      }
+    }
+  }
+
+  // 메시지 읽음 처리 수신 핸들러
+  void _handleMessageReadReceived(Map<String, dynamic> readData) {
+    print('=== 📖 채팅 상세에서 읽음 처리 수신 ===');
+    print('읽음 처리 데이터: $readData');
+
+    try {
+      final messageIds = readData['messageIds'] as List<dynamic>? ?? [];
+      final readByUserId = readData['readByUserId'] as int?;
+
+      if (messageIds.isNotEmpty && mounted) {
+        print('📖 읽음 처리된 메시지 IDs: $messageIds');
+        print('📖 읽음 처리한 사용자 ID: $readByUserId');
+
+        setState(() {
+          _debugLogs.add(
+            '읽음 처리 수신: ${messageIds.length}개 메시지 by User $readByUserId',
+          );
+          if (_debugLogs.length > 10) {
+            _debugLogs.removeAt(0);
+          }
+
+          // 읽음 처리된 메시지들 표시 (디버깅용)
+          for (final messageId in messageIds) {
+            final intMessageId =
+                messageId is int
+                    ? messageId
+                    : int.tryParse(messageId.toString());
+            if (intMessageId != null) {
+              print('✅ 메시지 ID $intMessageId 읽음 처리됨 by User $readByUserId');
+
+              // 해당 메시지 찾기 및 읽음 상태 업데이트
+              final messageIndex = _messages.indexWhere(
+                (msg) => msg.messageId == intMessageId,
+              );
+              if (messageIndex != -1) {
+                print('📱 UI에서 메시지 ID $intMessageId 읽음 상태 업데이트');
+                // TODO: ChatMessage 모델에 readCount 필드가 있다면 여기서 업데이트
+                // _messages[messageIndex] = _messages[messageIndex].copyWith(readCount: newReadCount);
+              }
+            }
+          }
+        });
+
+        // 읽음 처리 완료 로그
+        print('✅ 총 ${messageIds.length}개 메시지의 읽음 처리가 UI에 반영됨');
+      }
+    } catch (e) {
+      print('❌ 읽음 처리 데이터 처리 중 오류: $e');
+      setState(() {
+        _debugLogs.add('읽음 처리 오류: $e');
+        if (_debugLogs.length > 10) {
+          _debugLogs.removeAt(0);
+        }
       });
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F7),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.blue.shade100,
-              child: Text(widget.avatar, style: const TextStyle(fontSize: 20)),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              widget.userName,
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 채팅 메시지 영역
-          Expanded(
-            child: ListView.separated(
-              reverse: true,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
-              itemCount: _messages.length,
-              // separatorBuilder를 사용하여 아이템 사이에 구분자 삽입
-              separatorBuilder: (context, index) {
-                // 실제 인덱스 계산 (reverse 때문에)
-                final currentIndex = _messages.length - 1 - index;
-                final nextIndex = _messages.length - 2 - index;
+  // 채팅방 초대 알림 수신 핸들러
+  void _handleRoomInviteReceived(Map<String, dynamic> inviteData) {
+    print('=== 👥 채팅방 초대 알림 수신 ===');
+    print('초대 알림 데이터: $inviteData');
 
-                // 마지막 아이템이거나 리스트에 메시지가 하나뿐인 경우
-                if (nextIndex < 0 || _messages.isEmpty) {
-                  return const SizedBox(height: 0);
-                }
+    try {
+      final message = inviteData['message'] as String?;
+      final timestamp = inviteData['timestamp'] as String?;
+      final roomId = inviteData['roomId'] as int?;
 
-                // 현재 메시지와 다음 메시지의 발신자가 다른지 확인
-                final currentMessage = _messages[currentIndex];
-                final nextMessage = _messages[nextIndex];
-                final isDifferentSender =
-                    currentMessage.isMe != nextMessage.isMe;
+      if (message != null && timestamp != null && mounted) {
+        print('👥 초대 메시지: $message');
+        print('👥 초대 시간: $timestamp');
+        print('👥 채팅방 ID: $roomId');
 
-                // 발신자가 다르면 24px, 같으면 12px 간격 적용
-                return SizedBox(height: isDifferentSender ? 24.0 : 12.0);
-              },
-              itemBuilder: (context, index) {
-                final reversedIndex = _messages.length - 1 - index;
-                final message = _messages[reversedIndex];
-                return _buildMessage(message);
-              },
-            ),
-          ),
-
-          // 구분선
-          const Divider(height: 1),
-
-          // 메시지 입력창
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.add_circle_outline,
-                    color: AppColors.accentColor,
-                  ),
-                  onPressed: () {
-                    _showMediaOptions();
-                  },
-                ),
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 0,
-                    ),
-                    height: 40, // 고정 높이 설정
-                    decoration: ShapeDecoration(
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        side: const BorderSide(
-                          width: 1,
-                          color: Color(0xFFCCCCCC),
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: Center(
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: const InputDecoration(
-                          hintText: '메시지를 입력해 주세요',
-                          hintStyle: TextStyle(
-                            color: Color(0xFF999999),
-                            fontSize: 14,
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w300,
-                            letterSpacing: -0.22,
-                          ),
-                          isDense: true,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        minLines: 1,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Image.asset(
-                    'assets/icons/Icon/채팅보내기/Regular.png',
-                    width: 24,
-                    height: 24,
-                    color: AppColors.accentColor,
-                  ),
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 빠른 응답 버튼 생성
-  Widget _buildQuickReplyButton(String text, Color color) {
-    final bool isSelected = _selectedQuickReply == text;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedQuickReply = text;
-          });
-
-          // 잠시 딜레이 후 메시지 전송 (시각적 피드백을 위해)
-          Future.delayed(const Duration(milliseconds: 300), () {
-            setState(() {
-              _showQuickReplies = false;
-              _messages.add(
-                ChatMessage(
-                  text: text,
-                  isMe: true,
-                  time: _getCurrentTime(),
-                  messageType: MessageType.text,
-                ),
-              );
-            });
-          });
-        },
-        child: Container(
-          width: 140,
-          height: 45,
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF3A88F4) : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: !isSelected
-                ? Border.all(color: const Color(0xFFDDDDDD), width: 0.7)
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 15,
-                fontFamily: 'Pretendard',
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                color: isSelected ? Colors.white : const Color(0xFF3A88F4),
-              ),
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          text: _messageController.text,
-          isMe: true,
-          time: _getCurrentTime(),
+        // 초대 메시지를 채팅방 화면에 표시
+        final inviteMessage = ChatMessage(
+          messageId: null, // 시스템 메시지는 ID가 없을 수 있음
+          content: message,
+          senderUserId: 0, // 시스템 메시지
+          senderName: 'System',
           messageType: MessageType.text,
-        ),
-      );
-      _showQuickReplies = false;
-    });
+          time: _formatTime(timestamp),
+        );
 
-    _messageController.clear();
+        setState(() {
+          _messages.add(inviteMessage);
+          _debugLogs.add('초대 알림 수신: $message');
+          if (_debugLogs.length > 10) {
+            _debugLogs.removeAt(0);
+          }
+        });
+
+        // 스크롤을 맨 아래로 즉시 이동 (더 빠르게)
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
+
+        print('✅ 초대 알림이 채팅방에 표시됨');
+      }
+    } catch (e) {
+      print('❌ 초대 알림 데이터 처리 중 오류: $e');
+      setState(() {
+        _debugLogs.add('초대 알림 오류: $e');
+        if (_debugLogs.length > 10) {
+          _debugLogs.removeAt(0);
+        }
+      });
+    }
+  }
+
+  // 채팅방 나가기 알림 수신 핸들러
+  void _handleRoomLeaveReceived(Map<String, dynamic> leaveData) {
+    print('=== 🚪 1:1 채팅방 나가기 알림 수신 ===');
+    print('🚪 수신 시간: ${DateTime.now()}');
+    print('🚪 채팅방 ID: ${widget.roomId}');
+    print('🚪 나가기 알림 데이터: $leaveData');
+    print('🚪 현재 마운트 상태: $mounted');
+    print('🚪 현재 메시지 수: ${_messages.length}');
+
+    try {
+      final message = leaveData['message'] as String?;
+      final timestamp = leaveData['timestamp'] as String?;
+      final roomId = leaveData['roomId'] as int?;
+      final endOfDecreaseReadMarkMessageId =
+          leaveData['endOfDecreaseReadMarkMessageId'] as int?;
+
+      if (message != null && timestamp != null && mounted) {
+        print('🚪 나가기 메시지: $message');
+        print('🚪 나간 시간: $timestamp');
+        print('🚪 채팅방 ID: $roomId');
+        print('🚪 읽음 표시 감소 기준 메시지 ID: $endOfDecreaseReadMarkMessageId');
+
+        // 나가기 메시지를 채팅방 화면에 표시
+        final leaveMessage = ChatMessage(
+          messageId: DateTime.now().millisecondsSinceEpoch, // 임시 ID로 현재 시간 사용
+          content: message,
+          senderUserId: 0, // 시스템 메시지
+          senderName: 'System',
+          messageType: MessageType.system, // 시스템 메시지로 설정
+          time: _formatTime(timestamp),
+        );
+
+        setState(() {
+          _messages.add(leaveMessage);
+          _debugLogs.add('나가기 알림 수신: $message');
+          if (_debugLogs.length > 10) {
+            _debugLogs.removeAt(0);
+          }
+
+          // 읽음 표시 감소 처리
+          // timestamp 이전에 왔으면서 endOfDecreaseReadMarkMessageId 보다 큰 메시지들의 읽음 표시를 -1
+          if (endOfDecreaseReadMarkMessageId != null) {
+            print('📖 읽음 표시 감소 처리 시작...');
+            final leaveTime = DateTime.tryParse(timestamp);
+
+            if (leaveTime != null) {
+              int processedCount = 0;
+
+              for (int i = 0; i < _messages.length; i++) {
+                final msg = _messages[i];
+
+                // 조건 확인:
+                // 1. timestamp 이전에 온 메시지
+                // 2. endOfDecreaseReadMarkMessageId 보다 큰 메시지 ID
+                final msgTime = DateTime.tryParse(msg.time);
+                if (msgTime != null &&
+                    msgTime.isBefore(leaveTime) &&
+                    msg.messageId != null &&
+                    msg.messageId! > endOfDecreaseReadMarkMessageId &&
+                    msg.readCount > 0) {
+                  // readCount를 1 감소시킴
+                  final updatedMessage = msg.copyWith(
+                    readCount: msg.readCount - 1,
+                  );
+
+                  _messages[i] = updatedMessage;
+                  processedCount++;
+
+                  print(
+                    '📖 메시지 ${msg.messageId} 읽음 표시 감소: ${msg.readCount} -> ${updatedMessage.readCount}',
+                  );
+                }
+              }
+
+              print('📖 읽음 표시 감소 처리 완료 - 총 $processedCount개 메시지 처리됨');
+            } else {
+              print('❌ 나간 시간 파싱 실패: $timestamp');
+            }
+          }
+        });
+
+        // 스크롤을 맨 아래로 즉시 이동 (더 빠르게)
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
+
+        print('✅ 나가기 알림이 채팅방에 표시됨');
+      }
+    } catch (e) {
+      print('❌ 나가기 알림 데이터 처리 중 오류: $e');
+      setState(() {
+        _debugLogs.add('나가기 알림 오류: $e');
+        if (_debugLogs.length > 10) {
+          _debugLogs.removeAt(0);
+        }
+      });
+    }
+  }
+
+  // 시간 포맷팅 헬퍼 메서드 (로그 최소화)
+  String _formatTime(String? timestamp) {
+    if (timestamp == null || timestamp.isEmpty) return _getCurrentTime();
+
+    try {
+      // 이미 HH:MM 형식인지 확인
+      if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(timestamp)) {
+        return timestamp;
+      }
+
+      // ISO 8601 형식 시도 (가장 일반적)
+      try {
+        final dateTime = DateTime.parse(timestamp);
+        final formatted =
+            "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+        return formatted;
+      } catch (e) {
+        // ISO 8601 파싱 실패 시 정규식으로 시간 추출
+        if (timestamp.contains(':')) {
+          final timeMatch = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(timestamp);
+          if (timeMatch != null) {
+            final hour = timeMatch.group(1)!.padLeft(2, '0');
+            final minute = timeMatch.group(2)!;
+            return "$hour:$minute";
+          }
+        }
+      }
+
+      // 모든 파싱 실패 시 현재 시간 반환
+      return _getCurrentTime();
+    } catch (e) {
+      return _getCurrentTime();
+    }
+  }
+
+
+
+
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'Pretendard-Bold',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            content: Text(
+              message,
+              style: const TextStyle(
+                fontFamily: 'Pretendard-Regular',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  '확인',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard-Medium',
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4A80F0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
   }
 
   String _getCurrentTime() {
@@ -381,857 +1145,683 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     return "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
   }
 
-  Widget _buildMessage(ChatMessage message) {
-    if (message.messageType == MessageType.missionCard) {
-      return _buildMissionCard(message);
-    } else if (message.messageType == MessageType.image) {
-      return _buildImageMessage(message);
-    } else if (message.messageType == MessageType.video) {
-      return _buildVideoMessage(message);
-    }
+  String _getCurrentDate() {
+    final now = DateTime.now();
+    return "${now.year}. ${now.month.toString().padLeft(2, '0')}. ${now.day.toString().padLeft(2, '0')}";
+  }
 
-    return Align(
-      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
+  Widget _buildMessage(ChatMessage message, int index) {
+    // 시스템 메시지 처리 (senderUserId가 0인 경우)
+    final isSystemMessage = message.senderUserId == 0;
+    final isMe = !isSystemMessage && message.senderUserId == _currentUserId;
+    final isHighlighted =
+        _searchResults.contains(index) &&
+        _searchResults[_currentSearchIndex] == index;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration:
+          isHighlighted
+              ? BoxDecoration(
+                color: Colors.yellow.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              )
+              : null,
       child: Column(
-        crossAxisAlignment:
-            message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          // 발신자 이름 (상대방 메시지일 때만 표시)
-          if (!message.isMe)
-            Padding(
-              padding: const EdgeInsets.only(left: 15, bottom: 2),
-              child: Text(
-                widget.userName, // "엄마" 또는 다른 발신자 이름
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+          // 시스템 메시지
+          if (isSystemMessage)
+            _buildSystemMessage(message)
+          // 내 메시지
+          else if (isMe)
+            _buildMyMessage(message)
+          // 다른 사람 메시지
+          else
+            _buildOtherMessage(message),
+        ],
+      ),
+    );
+  }
+
+  // 시스템 메시지 위젯
+  Widget _buildSystemMessage(ChatMessage message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF999999).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            message.content ?? '',
+            style: TextStyle(
+              color: const Color(0xFF666666),
+              fontSize: 12,
+              fontFamily: 'Pretendard-Light',
+              letterSpacing: -0.24,
+            ),
+            textAlign: TextAlign.center,
+            softWrap: true,
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool _shouldShowDate(int index) {
+    // 날짜 표시 로직 비활성화
+    return false;
+  }
+
+  Widget _buildOtherMessage(ChatMessage message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 프로필과 이름
+          Container(
+            height: 36,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: ShapeDecoration(
+                    image:
+                        widget.avatar.isNotEmpty
+                            ? DecorationImage(
+                              image: CachedNetworkImageProvider(
+                                widget.avatar.startsWith('http')
+                                    ? widget.avatar
+                                    : 'https://littlebank-dev.s3.ap-northeast-2.amazonaws.com/${widget.avatar}',
+                              ),
+                              fit: BoxFit.cover,
+                            )
+                            : null,
+                    shape: OvalBorder(),
+                  ),
+                  child:
+                      widget.avatar.isEmpty
+                          ? Icon(
+                            Icons.person,
+                            color: Color(0xFF999999),
+                            size: 20,
+                          )
+                          : null,
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      widget.userName,
+                      style: TextStyle(
+                        color: const Color(0xFF202020),
+                        fontSize: 14,
+                        fontFamily: 'Pretendard-Bold',
+                        letterSpacing: -0.28,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // 메시지 버블과 시간 (오버플로우 해결)
+          Padding(
+            padding: const EdgeInsets.only(left: 48),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.7,
+                        minWidth: 60,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: ShapeDecoration(
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(18),
+                            bottomLeft: Radius.circular(18),
+                            bottomRight: Radius.circular(18),
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        message.content ?? '',
+                        style: TextStyle(
+                          color: const Color(0xFF4A4A4A),
+                          fontSize: 14,
+                          fontFamily: 'Pretendard-Regular',
+                          letterSpacing: -0.28,
+                          height: 1.4,
+                        ),
+                        softWrap: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(
+                      _formatTime(message.time),
+                      style: TextStyle(
+                        color: const Color(0xFFC4C4C4),
+                        fontSize: 10,
+                        fontFamily: 'Pretendard-Light',
+                        letterSpacing: -0.20,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-
-          // 메시지와 시간
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            textDirection: message.isMe ? TextDirection.rtl : TextDirection.ltr,
-            children: [
-              // 메시지 박스
-              Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.7,
-                  minWidth: 80,
-                ),
-                margin: const EdgeInsets.symmetric(horizontal: 10),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 20,
-                ),
-                decoration: BoxDecoration(
-                  color: message.isMe ? const Color(0xFF89DA8D) : Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(message.isMe ? 16 : 0),
-                    bottomRight: const Radius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  message.text,
-                  style: TextStyle(
-                    color:
-                        message.isMe ? Colors.white : const Color(0xFF666666),
-                    fontSize: 14,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w400,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-              // 시간 표시 (메시지 박스 옆)
-              Padding(
-                padding: const EdgeInsets.only(right: 8, left: 8),
-                child: Text(
-                  message.time,
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                ),
-              ),
-            ],
           ),
         ],
       ),
     );
   }
 
-  // 미션 카드 위젯
-  Widget _buildMissionCard(ChatMessage message) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 15, right: 15, bottom: 5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildMyMessage(ChatMessage message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // 발신자 이름
-            Padding(
+            Container(
               padding: const EdgeInsets.only(bottom: 2),
               child: Text(
-                widget.userName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+                _formatTime(message.time),
+                style: TextStyle(
+                  color: const Color(0xFFC4C4C4),
+                  fontSize: 10,
+                  fontFamily: 'Pretendard-Light',
+                  letterSpacing: -0.20,
                 ),
               ),
             ),
-
-            // 미션 카드와 시간
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // 미션 카드
-                Container(
-                  width: 236,
-                  height: 325,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                      bottomLeft: Radius.circular(0),
-                      bottomRight: Radius.circular(16),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7,
+                  minWidth: 60,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: ShapeDecoration(
+                  color: const Color(0xFF89DA8D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(18),
+                      topRight: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0x40000000),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.fromLTRB(28, 20, 28, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 상단 헤더
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF5D9EFF),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                message.missionData!['type']!,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF9E5D),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              "학원 미션",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // 미션 제목
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          message.missionData!['title']!,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-
-                      // 보상금
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "보상금",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                message.missionData!['reward']!,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF146AFF),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // 기간
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "기간",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                message.missionData!['period']!,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // 목표 달성률
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "목표 달성률",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                message.missionData!['progress']!,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Spacer
-                      const Spacer(),
-
-                      // 수학까지 시간 버튼
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4B8EFF),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          message.missionData!['timeRecorded']!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      // 조건을 바꿔주세요 버튼
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "조건을 바꿔주세요",
-                          style: TextStyle(
-                            color: Color(0xFF001F55),
-                            fontSize: 12,
-                            fontFamily: 'Pretendard',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
-
-                // 시간 표시
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 5),
-                  child: Text(
-                    message.time,
-                    style: const TextStyle(color: Colors.grey, fontSize: 10),
+                child: Text(
+                  message.content ?? '',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Regular',
+                    letterSpacing: -0.28,
+                    height: 1.4,
                   ),
-                ),
-              ],
-            ),
-
-            // 자동 응답 버튼 - 미션 카드 바로 아래에 위치
-            if (_showQuickReplies &&
-                message.messageType == MessageType.missionCard)
-              Container(
-                height: 55, // 높이 증가
-                margin: const EdgeInsets.only(top: 15, right: 15), // 마진 증가
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildQuickReplyButton("열심히 해볼게요!", Colors.white),
-                    _buildQuickReplyButton("응원이 필요해요!", Colors.white),
-                    _buildQuickReplyButton("감사합니다!", Colors.white),
-                  ],
+                  softWrap: true,
                 ),
               ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // 미디어 옵션 표시하는 메서드 추가
-  void _showMediaOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Container(
-              width: double.infinity,
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.3,
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "미디어 첨부",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Pretendard',
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 사진 옵션
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            _pickImage();
-                          },
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE9F1FF),
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: const Icon(
-                                  Icons.photo,
-                                  color: Color(0xFF3A88F4),
-                                  size: 30,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                "사진",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontFamily: 'Pretendard',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      
-                      // 동영상 옵션
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            _pickVideo();
-                          },
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE9F1FF),
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: const Icon(
-                                  Icons.videocam,
-                                  color: Color(0xFF3A88F4),
-                                  size: 30,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                "동영상",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontFamily: 'Pretendard',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+  // 검색 기능
+  void _startSearch() {
+    setState(() {
+      _isSearching = true;
+    });
+  }
+
+  void _stopSearch() {
+    setState(() {
+      _isSearching = false;
+      _searchQuery = '';
+      _searchResults.clear();
+      _currentSearchIndex = -1;
+    });
+    _searchController.clear();
+  }
+
+  void _performSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults.clear();
+        _currentSearchIndex = -1;
+      });
+      return;
+    }
+
+    final results = <int>[];
+    for (int i = 0; i < _messages.length; i++) {
+      if (_messages[i].content?.toLowerCase().contains(query.toLowerCase()) ==
+          true) {
+        results.add(i);
+      }
+    }
+
+    setState(() {
+      _searchQuery = query;
+      _searchResults = results;
+      _currentSearchIndex = results.isNotEmpty ? 0 : -1;
+    });
+
+    if (results.isNotEmpty) {
+      _scrollToSearchResult(0);
+    }
+  }
+
+  void _scrollToSearchResult(int resultIndex) {
+    if (resultIndex < 0 || resultIndex >= _searchResults.length) return;
+
+    final messageIndex = _searchResults[resultIndex];
+    final itemExtent = 120.0; // 메시지 아이템의 대략적인 높이
+    // reverse가 false이므로 정상적인 인덱스 계산
+    final offset = messageIndex * itemExtent;
+
+    _scrollController.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     );
   }
 
-  // 갤러리에서 이미지 선택하기
-  Future<void> _pickImage() async {
-    try {
-      final XFile? pickedImage = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
-      );
-      
-      if (pickedImage != null) {
-        setState(() {
-          _messages.add(
-            ChatMessage(
-              text: "이미지",
-              isMe: true,
-              time: _getCurrentTime(),
-              messageType: MessageType.image,
-              filePath: pickedImage.path,
-            ),
-          );
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이미지 선택 중 오류가 발생했습니다: $e')),
-      );
-    }
+  void _nextSearchResult() {
+    if (_searchResults.isEmpty) return;
+
+    final nextIndex = (_currentSearchIndex + 1) % _searchResults.length;
+    setState(() {
+      _currentSearchIndex = nextIndex;
+    });
+    _scrollToSearchResult(nextIndex);
   }
 
-  // 갤러리에서 비디오 선택하기
-  Future<void> _pickVideo() async {
-    try {
-      final XFile? pickedVideo = await _picker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: const Duration(minutes: 5),
-      );
-      
-      if (pickedVideo != null) {
-        // 비디오 썸네일 생성
-        final thumbnailPath = await _generateVideoThumbnail(pickedVideo.path);
-        
-        setState(() {
-          _messages.add(
-            ChatMessage(
-              text: "비디오",
-              isMe: true,
-              time: _getCurrentTime(),
-              messageType: MessageType.video,
-              filePath: pickedVideo.path,
-              thumbnailPath: thumbnailPath,
-            ),
-          );
-        });
-        
-        // 성공 메시지 표시
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('비디오가 성공적으로 첨부되었습니다'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+  void _previousSearchResult() {
+    if (_searchResults.isEmpty) return;
+
+    final prevIndex =
+        _currentSearchIndex <= 0
+            ? _searchResults.length - 1
+            : _currentSearchIndex - 1;
+    setState(() {
+      _currentSearchIndex = prevIndex;
+    });
+    _scrollToSearchResult(prevIndex);
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE7ECF6),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-        );
-      }
-    } catch (e) {
-      // 오류 상세 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('비디오 선택 중 오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
-      print('비디오 선택 오류: $e'); // 콘솔에 상세 오류 출력
-    }
-  }
-  
-  // 비디오 썸네일 생성
-  Future<String?> _generateVideoThumbnail(String videoPath) async {
-    try {
-      final thumbnailPath = await VideoThumbnail.thumbnailFile(
-        video: videoPath,
-        imageFormat: ImageFormat.JPEG,
-        maxWidth: 300,
-        quality: 75,
-      );
-      return thumbnailPath;
-    } catch (e) {
-      print('썸네일 생성 오류: $e');
-      return null;
-    }
-  }
-  
-  // 비디오 플레이어 초기화
-  Future<void> _initializeVideoPlayer(String videoPath) async {
-    _videoController = VideoPlayerController.file(File(videoPath));
-    try {
-      await _videoController!.initialize();
-      setState(() {
-        _isVideoInitialized = true;
-      });
-    } catch (e) {
-      print('비디오 플레이어 초기화 오류: $e');
-    }
-  }
-  
-  // 비디오 재생/일시정지 토글
-  void _toggleVideoPlayback() {
-    if (_videoController != null) {
-      if (_videoController!.value.isPlaying) {
-        _videoController!.pause();
-      } else {
-        _videoController!.play();
-      }
-      setState(() {});
-    }
-  }
-
-  // 이미지 메시지 빌더
-  Widget _buildImageMessage(ChatMessage message) {
-    return Align(
-      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Column(
-        crossAxisAlignment:
-            message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        ],
+      ),
+      child: Row(
         children: [
-          // 발신자 이름 (상대방 메시지일 때만 표시)
-          if (!message.isMe)
-            Padding(
-              padding: const EdgeInsets.only(left: 15, bottom: 2),
-              child: Text(
-                widget.userName,
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7ECF6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFDADADA), width: 0.8),
+              ),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
+                  fontSize: 14,
+                  fontFamily: 'Pretendard-Regular',
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                decoration: InputDecoration(
+                  hintText: '채팅 내용 검색 해주세요.',
+                  fillColor: const Color(0xFFE7ECF6),
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF999999),
+                    fontSize: 12,
+                    fontFamily: 'Pretendard-Light',
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: _performSearch,
               ),
             ),
-
-          // 이미지와 시간
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            textDirection: message.isMe ? TextDirection.rtl : TextDirection.ltr,
-            children: [
-              // 이미지 컨테이너
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.65,
-                  maxHeight: 200,
-                ),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(message.isMe ? 16 : 0),
-                      bottomRight: Radius.circular(message.isMe ? 0 : 16),
-                    ),
-                    color: message.isMe ? const Color(0xFF89DA8D) : Colors.white,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: message.filePath != null 
-                    ? Image.file(
-                        File(message.filePath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const SizedBox(
-                            width: 150,
-                            height: 150,
-                            child: Center(
-                              child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                            ),
-                          );
-                        },
-                      )
-                    : message.mediaUrl != null 
-                      ? Image.asset(
-                          message.mediaUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const SizedBox(
-                              width: 150,
-                              height: 150,
-                              child: Center(
-                                child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          width: 150,
-                          height: 150,
-                          color: Colors.grey.shade200,
-                        ),
+          ),
+          const SizedBox(width: 8),
+          // 검색 결과 네비게이션
+          if (_searchResults.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4A80F0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_currentSearchIndex + 1}/${_searchResults.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontFamily: 'Pretendard-Medium',
                 ),
               ),
-              // 시간 표시 (이미지 옆)
-              Padding(
-                padding: const EdgeInsets.only(right: 8, left: 8),
-                child: Text(
-                  message.time,
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                ),
-              ),
-            ],
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.keyboard_arrow_up, size: 20),
+              onPressed: _previousSearchResult,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+            IconButton(
+              icon: const Icon(Icons.keyboard_arrow_down, size: 20),
+              onPressed: _nextSearchResult,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ],
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            onPressed: _stopSearch,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
         ],
       ),
     );
   }
 
-  // 비디오 메시지 빌더
-  Widget _buildVideoMessage(ChatMessage message) {
-    return Align(
-      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Column(
-        crossAxisAlignment:
-            message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          // 발신자 이름 (상대방 메시지일 때만 표시)
-          if (!message.isMe)
-            Padding(
-              padding: const EdgeInsets.only(left: 15, bottom: 2),
-              child: Text(
-                widget.userName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF202020),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFE7ECF6),
+          image:
+              _backgroundImagePath != null
+                  ? DecorationImage(
+                    image: AssetImage(_backgroundImagePath!),
+                    fit: BoxFit.cover,
+                  )
+                  : null,
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Image.asset(
+                'assets/icons/my/뒤로가기.png',
+                width: 24,
+                height: 24,
+                fit: BoxFit.contain,
+                errorBuilder:
+                    (context, error, stackTrace) => const Icon(
+                      Icons.arrow_back_ios,
+                      color: Color(0xFF202020),
+                    ),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: Text(
+              _roomName.isNotEmpty ? _roomName : widget.userName,
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 16,
+                fontFamily: 'Pretendard-Bold',
+                letterSpacing: -0.32,
               ),
             ),
-
-          // 비디오 썸네일과 시간
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            textDirection: message.isMe ? TextDirection.rtl : TextDirection.ltr,
-            children: [
-              // 비디오 컨테이너
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.65,
-                  maxHeight: 200,
+            centerTitle: true,
+            actions: [
+              IconButton(
+                icon: Image.asset(
+                  'assets/images/search.png',
+                  width: 24,
+                  height: 24,
+                  color: const Color(0xFF202020),
                 ),
-                child: GestureDetector(
-                  onTap: () {
-                    // 비디오 전체 화면 재생
-                    if (message.filePath != null) {
-                      _showVideoFullScreen(message.filePath!);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('비디오 재생에 실패했습니다'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(16),
-                        topRight: const Radius.circular(16),
-                        bottomLeft: Radius.circular(message.isMe ? 16 : 0),
-                        bottomRight: Radius.circular(message.isMe ? 0 : 16),
+                onPressed: _startSearch,
+              ),
+              IconButton(
+                icon: Image.asset(
+                  'assets/icons/Icon/chat/menu.png',
+                  width: 24,
+                  height: 24,
+                  fit: BoxFit.contain,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatRoomMenuScreen(
+                        userName: widget.userName,
+                        avatar: widget.avatar,
+                        roomId: widget.roomId,
+                        userId: widget.userId,
                       ),
-                      color: message.isMe ? const Color(0xFF89DA8D) : Colors.white,
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
-                      alignment: Alignment.center,
+                  ).then((result) {
+                    if (result != null && result is Map<String, dynamic>) {
+                      final action = result['action'];
+                      if (action == 'leave_room') {
+                        Navigator.pop(context, result);
+                      } else if (action == 'update_room_name') {
+                        final newName = result['newName'] as String?;
+                        final success = result['success'] as bool? ?? false;
+                        
+                        if (success && newName != null) {
+                          // 채팅방 이름이 변경되었을 때 상단 제목 업데이트
+                          setState(() {
+                            _roomName = newName;
+                          });
+                          print('✅ 아이단 채팅 상세 화면 제목 업데이트: $newName');
+                        }
+                        
+                        // 채팅 목록으로 결과 전달
+                        Navigator.pop(context, result);
+                      }
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              if (_isSearching) _buildSearchBar(),
+
+              if (!_isSearching)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    _getCurrentDate(),
+                    style: TextStyle(
+                      color: const Color(0xFFC4C4C4),
+                      fontSize: 12,
+                      fontFamily: 'Pretendard-Light',
+                      letterSpacing: -0.24,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child:
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : _messages.isEmpty
+                        ? Center(
+                          child: Text(
+                            '새로운 메시지를 보내보세요!',
+                            style: TextStyle(
+                              color: const Color(0xFF999999),
+                              fontSize: 14,
+                              fontFamily: 'Pretendard-Light',
+                            ),
+                          ),
+                        )
+                        : ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _messages.length,
+                          physics: const ClampingScrollPhysics(), // 더 부드러운 스크롤
+                          cacheExtent: 1000, // 렌더링 캐시 확장
+                          addAutomaticKeepAlives: false, // 메모리 효율성
+                          addRepaintBoundaries: false, // 리페인트 경계 제거로 성능 향상
+                          itemBuilder: (context, index) {
+                            return RepaintBoundary(
+                              // 개별 메시지 리페인트 경계
+                              child: _buildMessage(_messages[index], index),
+                            );
+                          },
+                        ),
+              ),
+              if (!_isSearching)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(color: Colors.white),
+                  child: SafeArea(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // 비디오 썸네일
-                        message.thumbnailPath != null && File(message.thumbnailPath!).existsSync() 
-                          ? Image.file(
-                              File(message.thumbnailPath!),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: 150,
-                              errorBuilder: (context, error, stackTrace) {
-                                print('썸네일 로드 오류: $error');
-                                return Container(
-                                  width: 150,
-                                  height: 150,
-                                  color: Colors.grey.shade200,
-                                  child: Center(
-                                    child: Icon(Icons.movie, size: 50, color: Colors.grey),
-                                  ),
-                                );
-                              },
-                            )
-                          : message.filePath != null 
-                            ? Container(
-                                width: 150,
-                                height: 150,
-                                color: Colors.grey.shade200,
-                                child: Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.movie, size: 40, color: Colors.grey.shade600),
-                                      const SizedBox(height: 4),
-                                      const Text(
-                                        '비디오',
-                                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        GestureDetector(
+                          onTap: _showMediaOptions,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            child: Image.asset(
+                              'assets/icons/add_file.png',
+                              width: 28,
+                              height: 28,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 2,
+                            ),
+                            decoration: ShapeDecoration(
+                              color: const Color(0xFFF0F0F0),
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  width: 0.80,
+                                  color: const Color(0xFFDADADA),
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _messageController,
+                                    decoration: InputDecoration(
+                                      hintText: '메시지를 입력해 주세요',
+                                      hintStyle: TextStyle(
+                                        color: const Color(0xFF999999),
+                                        fontSize: 12,
+                                        fontFamily: 'Pretendard',
+                                        fontWeight: FontWeight.w300,
+                                        letterSpacing: -0.24,
                                       ),
-                                    ],
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      errorBorder: InputBorder.none,
+                                      disabledBorder: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      fillColor: Colors.transparent,
+                                      filled: false,
+                                    ),
+                                    style: TextStyle(
+                                      color: const Color(0xFF202020),
+                                      fontSize: 12,
+                                      fontFamily: 'Pretendard',
+                                      fontWeight: FontWeight.w400,
+                                      letterSpacing: -0.24,
+                                    ),
+                                    maxLines: null,
+                                    keyboardType: TextInputType.multiline,
+                                    textInputAction: TextInputAction.send,
+                                    onSubmitted: (value) {
+                                      if (value.trim().isNotEmpty) {
+                                        _sendMessage();
+                                      }
+                                    },
                                   ),
                                 ),
-                              )
-                            : Container(
-                                width: 150,
-                                height: 150,
-                                color: Colors.grey.shade200,
-                              ),
-                        
-                        // 재생 아이콘
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.play_arrow,
-                            size: 30,
-                            color: Colors.white,
-                          ),
-                        ),
-                        
-                        // 비디오 표시기
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.videocam, color: Colors.white, size: 14),
-                                SizedBox(width: 4),
-                                Text(
-                                  '비디오',
-                                  style: TextStyle(color: Colors.white, fontSize: 12),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (_messageController.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                      _sendMessage();
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Image.asset(
+                                      'assets/icons/Icon/chat/send.png',
+                                      width: 28,
+                                      height: 28,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1241,38 +1831,487 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     ),
                   ),
                 ),
-              ),
-              // 시간 표시 (비디오 옆)
-              Padding(
-                padding: const EdgeInsets.only(right: 8, left: 8),
-                child: Text(
-                  message.time,
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                ),
-              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMediaOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            constraints: BoxConstraints(maxHeight: 200, minHeight: 164),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 상단 메시지 입력 영역
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(color: Colors.white),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              child: Icon(
+                                Icons.close,
+                                size: 24,
+                                color: Color(0xFF999999),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              height: 38,
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFFF0F0F0),
+                                shape: RoundedRectangleBorder(
+                                  side: BorderSide(
+                                    width: 0.80,
+                                    color: const Color(0xFFDADADA),
+                                  ),
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 16),
+                                  child: Text(
+                                    '메시지를 입력해 주세요',
+                                    style: TextStyle(
+                                      color: const Color(0xFF999999),
+                                      fontSize: 12,
+                                      fontFamily: 'Pretendard',
+                                      fontWeight: FontWeight.w300,
+                                      letterSpacing: -0.24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 하단 옵션 영역
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(color: Colors.white),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const SizedBox(width: 16),
+                          // 촬영 옵션
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context);
+                              _pickImageFromCamera();
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/icons/Icon/chat/photo.png',
+                                  width: 60,
+                                  height: 60,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '촬영',
+                                  style: TextStyle(
+                                    color: const Color(0xFF8490A3),
+                                    fontSize: 12,
+                                    fontFamily: 'Pretendard',
+                                    fontWeight: FontWeight.w300,
+                                    letterSpacing: -0.24,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 24),
+
+                          // 앨범 옵션
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context);
+                              _pickImage();
+                            },
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset(
+                                  'assets/icons/Icon/chat/gallery.png',
+                                  width: 60,
+                                  height: 60,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '앨범',
+                                  style: TextStyle(
+                                    color: const Color(0xFF8490A3),
+                                    fontSize: 12,
+                                    fontFamily: 'Pretendard',
+                                    fontWeight: FontWeight.w300,
+                                    letterSpacing: -0.24,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMediaOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9F1FF),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: Icon(icon, color: const Color(0xFF3A88F4), size: 30),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontFamily: 'Pretendard-Regular',
+            ),
           ),
         ],
       ),
     );
   }
-  
-  // 비디오 전체 화면 표시
-  void _showVideoFullScreen(String videoPath) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => VideoPlayerScreen(videoPath: videoPath),
-      ),
-    );
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? pickedImage = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+
+      if (pickedImage != null) {
+        print('=== 📷 카메라 이미지 메시지 전송 (WebSocket 전용) ===');
+        print('이미지 경로: ${pickedImage.path}');
+
+        final result = await ChatService.sendMessage(
+          roomId: widget.roomId,
+          content: pickedImage.path,
+          messageType: 'IMAGE',
+        );
+
+        if (result != null && result['success'] == true) {
+          print('✅ 카메라 이미지 메시지 전송 성공 - WebSocket을 통해 수신될 예정');
+        } else {
+          print('❌ 카메라 이미지 메시지 전송 실패');
+        }
+      }
+    } catch (e) {
+      print('❌ 카메라 이미지 촬영/전송 중 오류: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('카메라 이미지 촬영 중 오류가 발생했습니다: $e')));
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedImage = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (pickedImage != null) {
+        print('=== 📷 이미지 메시지 전송 (WebSocket 전용) ===');
+        print('이미지 경로: ${pickedImage.path}');
+
+        // TODO: 파일 업로드 API 호출 후 URL 받아서 WebSocket으로 전송
+        // 현재는 로컬 경로를 직접 전송 (임시)
+        final result = await ChatService.sendMessage(
+          roomId: widget.roomId,
+          content: pickedImage.path,
+          messageType: 'IMAGE',
+        );
+
+        if (result != null && result['success'] == true) {
+          print('✅ 이미지 메시지 전송 성공 - WebSocket을 통해 수신될 예정');
+        } else {
+          print('❌ 이미지 메시지 전송 실패');
+        }
+      }
+    } catch (e) {
+      print('❌ 이미지 선택/전송 중 오류: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('이미지 선택 중 오류가 발생했습니다: $e')));
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+
+    try {
+      print('=== 📤 메시지 전송 시작 (WebSocket 전용) ===');
+      print('메시지 내용: $text');
+
+      // 화면용 디버그 로그 추가
+      if (mounted) {
+        setState(() {
+          _debugLogs.add('[${DateTime.now()}] 📤 전송 시도: $text');
+          if (_debugLogs.length > 10) {
+            _debugLogs.removeAt(0);
+          }
+        });
+      }
+
+      // 입력창 먼저 비우기
+      final originalText = text;
+      _messageController.clear();
+
+      // 전송 전 메시지 수 기록
+      final messageCountBeforeSend = _messages.length;
+      print('🔍 전송 전 메시지 수: $messageCountBeforeSend');
+
+      // 서버로 메시지 전송 (WebSocket으로만 수신)
+      final result = await ChatService.sendMessage(
+        roomId: widget.roomId,
+        content: text,
+        messageType: 'TEXT',
+      );
+
+      if (result != null && result['success'] == true) {
+        print('✅ 메시지 전송 성공 - 서버 저장 상태 확인 중...');
+
+        // 화면용 디버그 로그 추가
+        if (mounted) {
+          setState(() {
+            _debugLogs.add('[${DateTime.now()}] ✅ 전송 성공 - WebSocket 수신 대기 중');
+            if (_debugLogs.length > 10) {
+              _debugLogs.removeAt(0);
+            }
+          });
+        }
+
+        // WebSocket 실시간 수신 대기 (3초)
+        bool messageReceived = false;
+        Timer? timeoutTimer;
+
+        // 메시지 수신 체크용 콜백
+        void checkMessageReceived() {
+          if (mounted && _messages.length > messageCountBeforeSend) {
+            messageReceived = true;
+            timeoutTimer?.cancel();
+            print('🎉 WebSocket으로 메시지 실시간 수신 성공!');
+
+            setState(() {
+              _debugLogs.add('[${DateTime.now()}] 🎉 WebSocket 실시간 수신 성공');
+              if (_debugLogs.length > 10) {
+                _debugLogs.removeAt(0);
+              }
+            });
+          }
+        }
+
+        // 0.3초마다 메시지 수신 체크 (더 자주 체크)
+        Timer.periodic(const Duration(milliseconds: 300), (timer) {
+          checkMessageReceived();
+          if (messageReceived || timer.tick >= 4) {
+            // 1.2초 대기 (0.3 * 4)
+            timer.cancel();
+          }
+        });
+
+        // 1초 후 타임아웃 처리 (더 빠른 새로고침)
+        timeoutTimer = Timer(const Duration(seconds: 1), () async {
+          if (!messageReceived && mounted) {
+            print('⚠️ WebSocket 실시간 수신 타임아웃 - 강제 메시지 다시 로드');
+
+            setState(() {
+              _debugLogs.add('[${DateTime.now()}] ⚠️ WebSocket 타임아웃 - 강제 새로고침');
+              if (_debugLogs.length > 10) {
+                _debugLogs.removeAt(0);
+              }
+            });
+
+            // 강제로 메시지 목록 다시 로드
+            await _loadChatRoomDetails(setupWebSocket: false);
+
+            // 스크롤을 맨 아래로 이동
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_scrollController.hasClients && _messages.isNotEmpty) {
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              }
+            });
+
+            print('🔄 강제 새로고침 완료 - 새 메시지가 표시되어야 함');
+
+            setState(() {
+              _debugLogs.add(
+                '[${DateTime.now()}] 🔄 강제 새로고침 완료 - 메시지 수: ${_messages.length}',
+              );
+              if (_debugLogs.length > 10) {
+                _debugLogs.removeAt(0);
+              }
+            });
+          }
+        });
+
+        // 메시지 전송 3초 후 서버 상태 확인
+        Future.delayed(const Duration(seconds: 3), () async {
+          try {
+            print('🔍 메시지 저장 상태 확인: 채팅방 상세 정보 재조회');
+            final roomDetails = await ChatService.getChatRoomDetails(
+              widget.roomId,
+            );
+
+            if (roomDetails != null) {
+              final lastSendMessageId =
+                  roomDetails['lastSendMessageId'] as int?;
+              print('🔍 재조회된 lastSendMessageId: $lastSendMessageId');
+
+              if (lastSendMessageId != null && lastSendMessageId > 0) {
+                print('✅ 메시지가 서버에 정상 저장됨: ID=$lastSendMessageId');
+
+                if (mounted) {
+                  setState(() {
+                    _debugLogs.add(
+                      '[${DateTime.now()}] ✅ 서버 저장 확인: ID=$lastSendMessageId',
+                    );
+                    if (_debugLogs.length > 10) {
+                      _debugLogs.removeAt(0);
+                    }
+                  });
+                }
+              } else {
+                print('❌ 메시지가 서버에 저장되지 않았음 - lastSendMessageId 여전히 0');
+
+                if (mounted) {
+                  setState(() {
+                    _debugLogs.add(
+                      '[${DateTime.now()}] ❌ 서버 저장 실패 - lastSendMessageId 여전히 0',
+                    );
+                    if (_debugLogs.length > 10) {
+                      _debugLogs.removeAt(0);
+                    }
+                  });
+                }
+              }
+            } else {
+              print('❌ 채팅방 상세 정보 조회 실패 - roomDetails가 null');
+
+              if (mounted) {
+                setState(() {
+                  _debugLogs.add('[${DateTime.now()}] ❌ 채팅방 상세 정보 조회 실패');
+                  if (_debugLogs.length > 10) {
+                    _debugLogs.removeAt(0);
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            print('❌ 서버 상태 확인 중 오류: $e');
+
+            if (mounted) {
+              setState(() {
+                _debugLogs.add('[${DateTime.now()}] ❌ 서버 상태 확인 오류: $e');
+                if (_debugLogs.length > 10) {
+                  _debugLogs.removeAt(0);
+                }
+              });
+            }
+          }
+        });
+      } else if (result != null && result['error'] == 'BLOCKED_USER') {
+        print('⚠️ 차단된 사용자에게 메시지 전송 시도');
+
+        // 입력창에 원래 텍스트 복원
+        _messageController.text = originalText;
+        _showErrorDialog('전송 불가', '차단된 사용자에게는 메시지를 전송할 수 없습니다.');
+      } else {
+        print('❌ 메시지 전송 실패');
+
+        // 입력창에 원래 텍스트 복원
+        _messageController.text = originalText;
+
+        final errorMessage = result?['message'] ?? '메시지 전송에 실패했습니다.';
+        _showErrorDialog('전송 실패', errorMessage);
+      }
+    } catch (e) {
+      print('❌ 메시지 전송 중 예외 발생: $e');
+
+      // 입력창에 원래 텍스트 복원
+      _messageController.text = text;
+      _showErrorDialog('오류', '메시지 전송 중 오류가 발생했습니다: $e');
+    }
   }
 }
+
+// TODO: 기존 _InviteFriendsDialog 클래스 제거됨 - 새로운 친구 목록 화면 사용
 
 // 비디오 플레이어 화면
 class VideoPlayerScreen extends StatefulWidget {
   final String videoPath;
-  
+
   const VideoPlayerScreen({super.key, required this.videoPath});
-  
+
   @override
   _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
 }
@@ -1280,13 +2319,13 @@ class VideoPlayerScreen extends StatefulWidget {
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late VideoPlayerController _controller;
   bool _isInitialized = false;
-  
+
   @override
   void initState() {
     super.initState();
     _initVideoPlayer();
   }
-  
+
   Future<void> _initVideoPlayer() async {
     _controller = VideoPlayerController.file(File(widget.videoPath));
     try {
@@ -1298,17 +2337,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     } catch (e) {
       print('비디오 플레이어 초기화 오류: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('비디오를 재생할 수 없습니다: $e')),
+        SnackBar(
+          content: Text(
+            '비디오를 재생할 수 없습니다: $e',
+            style: const TextStyle(
+              fontFamily: 'Pretendard-Regular',
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ),
       );
     }
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1322,67 +2369,45 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
       ),
       body: Center(
-        child: _isInitialized
-            ? AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // 비디오 플레이어
-                    VideoPlayer(_controller),
-                    
-                    // 재생/일시정지 컨트롤
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (_controller.value.isPlaying) {
-                            _controller.pause();
-                          } else {
-                            _controller.play();
-                          }
-                        });
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        child: Center(
-                          child: Icon(
-                            _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                            size: 60.0,
-                            color: Colors.white.withOpacity(0.7),
+        child:
+            _isInitialized
+                ? AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // 비디오 플레이어
+                      VideoPlayer(_controller),
+
+                      // 재생/일시정지 컨트롤
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            if (_controller.value.isPlaying) {
+                              _controller.pause();
+                            } else {
+                              _controller.play();
+                            }
+                          });
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          child: Center(
+                            child: Icon(
+                              _controller.value.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              size: 60.0,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              )
-            : const CircularProgressIndicator(),
+                    ],
+                  ),
+                )
+                : const CircularProgressIndicator(),
       ),
     );
   }
-}
-
-// 메시지 타입 정의
-enum MessageType { text, missionCard, challengeCard, image, video }
-
-class ChatMessage {
-  final String text;
-  final bool isMe;
-  final String time;
-  final MessageType messageType;
-  final Map<String, String>? missionData;
-  final String? mediaUrl;  // 이미지나 비디오 URL 저장 (예시 이미지용)
-  final String? filePath;  // 디바이스에서 선택한 파일 경로
-  final String? thumbnailPath; // 비디오 썸네일 경로
-
-  ChatMessage({
-    required this.text,
-    required this.isMe,
-    required this.time,
-    required this.messageType,
-    this.missionData,
-    this.mediaUrl,
-    this.filePath,
-    this.thumbnailPath,
-  });
 }

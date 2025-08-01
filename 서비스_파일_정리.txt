@@ -1,0 +1,143 @@
+==========================================================
+          리틀뱅크 앱 서비스(Services) 파일 용도 정리
+==========================================================
+
+▓ 인증 및 계정 관리 서비스
+  ├─ auth_service.dart                  - 사용자 인증, 회원가입, 로그인 처리 (86KB)
+  ├─ token_service.dart                 - JWT 토큰 관리 및 갱신 (2.0KB)
+  ├─ naver_auth.dart                    - 네이버 소셜 로그인 연동 (10KB)
+  ├─ sns_service.dart                   - 소셜 로그인 통합 관리 (44KB)
+  └─ email_verification_service.dart    - 이메일 인증 처리 (3.6KB)
+
+▓ 결제 및 빌링 서비스
+  ├─ payment_service.dart               - 일반 결제 처리 및 포인트 충전 (51KB)
+  ├─ toss_payment_service.dart          - 토스페이 결제 연동 (21KB)
+  ├─ billing_service.dart               - 정기 결제 및 빌링 관리 (30KB)
+  └─ subscription_service.dart          - 구독권 관리 및 가족 구독 (54KB)
+
+▓ 교육 및 미션 관리 서비스
+  ├─ mission_service.dart               - 미션 생성, 관리, 완료 처리 (43KB)
+  ├─ goal_service.dart                  - 목표 설정 및 달성 관리 (65KB)
+  ├─ challenge_service.dart             - 챌린지 생성 및 참여 관리 (28KB)
+  ├─ game_service.dart                  - 게임 요소 및 포인트 관리 (4.0KB)
+  └─ survey_service.dart                - 설문조사 관리 (4.0KB)
+
+▓ 소통 및 소셜 서비스
+  ├─ chat_service.dart                  - 실시간 채팅 및 WebSocket 통신 (107KB)
+  ├─ chat_background_service.dart       - 채팅 배경 관리 (1.9KB)
+  ├─ feed_service.dart                  - 소셜 피드 및 게시글 관리 (75KB)
+  ├─ relationship_service.dart          - 가족/친구 관계 관리 (65KB)
+  ├─ friend_search_service.dart         - 친구 검색 및 추가 (12KB)
+  ├─ family_service.dart                - 가족 구성원 관리 (38KB)
+  └─ kakao_share_service.dart           - 카카오톡 공유 기능 (41KB)
+
+▓ 알림 및 푸시 서비스
+  ├─ global_notification_service.dart   - 글로벌 알림 관리 및 표시 (14KB)
+  ├─ notification_service.dart          - 기본 알림 서비스 (3.2KB)
+  └─ push_notification_service.dart     - FCM 푸시 알림 처리 (6.2KB)
+
+▓ 데이터 분석 및 리포트 서비스
+  ├─ analysis_service.dart              - 학습/활동 데이터 분석 (62KB)
+  └─ pdf_service.dart                   - PDF 문서 생성 및 처리 (48KB)
+
+▓ 기관 및 학교 관리 서비스
+  └─ school_service.dart                - 학교 정보 및 학급 관리 (12KB)
+
+▓ 시스템 및 유틸리티 서비스
+  ├─ dio_interceptor.dart               - HTTP 요청 인터셉터 및 에러 처리 (4.8KB)
+  ├─ navigation_service.dart            - 글로벌 네비게이션 관리 (909B)
+  └─ deep_link_service.dart             - 딥링크 처리 및 라우팅 (13KB)
+
+==========================================================
+                  서비스별 주요 기능 상세
+==========================================================
+
+🔐 **인증 서비스 (auth_service.dart)**
+  - 회원가입, 로그인, 로그아웃
+  - JWT 토큰 관리 및 자동 갱신
+  - 소셜 로그인 연동 (카카오, 네이버)
+  - 사용자 프로필 관리
+
+💳 **결제 서비스 (payment_service.dart)**
+  - 포인트 충전 및 결제 처리
+  - 토스페이, 아임포트 연동
+  - 결제 내역 및 영수증 관리
+  - 환불 및 취소 처리
+
+📚 **미션 서비스 (mission_service.dart)**
+  - 미션 생성 및 할당
+  - 미션 진행 상황 추적
+  - 보상 지급 및 완료 처리
+  - 카테고리별 미션 관리
+
+🎯 **목표 서비스 (goal_service.dart)**
+  - 개인/가족 목표 설정
+  - 목표 달성도 추적
+  - 목표 수정 및 삭제
+  - 목표 보상 시스템
+
+💬 **채팅 서비스 (chat_service.dart)**
+  - 실시간 메시지 송수신
+  - WebSocket/STOMP 연결 관리
+  - 채팅방 생성 및 관리
+  - 메시지 읽음 처리
+
+📱 **피드 서비스 (feed_service.dart)**
+  - 게시글 작성, 수정, 삭제
+  - 댓글 및 좋아요 기능
+  - 피드 필터링 및 검색
+  - 이미지 업로드 처리
+
+👥 **관계 서비스 (relationship_service.dart)**
+  - 가족 구성원 추가/관리
+  - 친구 검색 및 추가
+  - 관계 승인/거절 처리
+  - 연락처 기반 사용자 찾기
+
+📊 **분석 서비스 (analysis_service.dart)**
+  - 학습 데이터 분석
+  - 성과 리포트 생성
+  - 통계 대시보드 데이터
+  - PDF 리포트 생성
+
+🔔 **알림 서비스 (global_notification_service.dart)**
+  - 앱 내 알림 표시
+  - 모달 알림 관리
+  - 알림 우선순위 처리
+  - 알림 히스토리 관리
+
+💰 **구독 서비스 (subscription_service.dart)**
+  - 가족 구독권 관리
+  - 구독 결제 처리
+  - 구독 공유 및 초대
+  - 구독 상태 관리
+
+==========================================================
+                      기술 스택 및 연동
+==========================================================
+
+🌐 **외부 API 연동:**
+  - 카카오 API (로그인, 공유)
+  - 네이버 API (로그인)
+  - 토스페이먼츠 API
+  - 아임포트 결제 API
+  - Firebase FCM (푸시 알림)
+
+🔧 **주요 기술:**
+  - HTTP/HTTPS 통신 (http, dio)
+  - WebSocket/STOMP (실시간 채팅)
+  - JWT 토큰 인증
+  - Flutter Secure Storage
+  - SharedPreferences
+
+📡 **서버 통신:**
+  - 기본 서버: http://3.34.52.239:8080
+  - WebSocket: ws://3.34.52.239:8080/ws-stomp
+  - RESTful API 패턴
+  - JSON 데이터 포맷
+
+==========================================================
+총 서비스 파일 수: 30개
+총 코드 라인 수: 약 40,000+ 라인
+핵심 기능: 금융교육, 가족소통, 미션관리, 소셜피드
+==========================================================

@@ -1,5 +1,8 @@
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -7,26 +10,21 @@ plugins {
 
 // 카카오 로그인 REST API 키 설정
 val kakaoRestApiKey = "91ca6e030c0d5187153efb8bf246508c"
-// 네이버 클라이언트 ID 설정
-val naverClientId = "xDoTbCTjZYNhgSkEK1K7"
-// 네이버 클라이언트 시크릿 설정
-val naverClientSecret = "RETtyp4ogI"
-// 네이버 클라이언트 이름 설정
-val naverClientName = "littlebank"
 
 android {
-    namespace = "com.example.android_design_preview"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.littlebank.littlebank_prod"
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
-        jvmTarget = "11"
-        freeCompilerArgs = listOf("-Xuse-k2", "-opt-in=kotlin.RequiresOptIn", "-language-version=1.9")
+        jvmTarget = "17"
+        freeCompilerArgs = listOf("-Xjvm-default=all")
     }
 
     sourceSets {
@@ -38,29 +36,39 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.android_design_preview"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdk = 21 // 카카오 SDK는 최소 API 레벨 21이 필요합니다
-        targetSdk = flutter.targetSdkVersion
-        versionCode = 1
-        versionName = "1.0.0"
+        applicationId = "com.littlebank.littlebank_prod"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 18
+        versionName = "1.1.7"
         
         // 카카오 로그인 REST API 키를 매니페스트에 적용
         manifestPlaceholders["REST_API_KEY"] = kakaoRestApiKey
-        // 네이버 클라이언트 ID를 매니페스트에 적용
-        manifestPlaceholders["naverClientId"] = naverClientId
-        manifestPlaceholders["naverClientSecret"] = naverClientSecret
-        manifestPlaceholders["naverClientName"] = naverClientName
-        manifestPlaceholders["naverLoginScheme"] = "naver$naverClientId"
+        // 네이버 로그인 스킴 설정 (strings.xml의 naver_login_scheme 값을 사용하도록 변경)
+        manifestPlaceholders["naverLoginScheme"] = "@string/naver_login_scheme"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("key.jks")
+            storePassword = "121212"
+            keyAlias = "key"
+            keyPassword = "121212"
+        }
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        getByName("debug") {
+            isDebuggable = true
         }
     }
 }
@@ -70,5 +78,11 @@ flutter {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
+    // Java 8+ API desugaring 의존성 추가
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // AndroidX Core 의존성 - 시스템 UI 제어를 위해 필요
+    implementation("androidx.core:core-ktx:1.12.0")
+    // 네이버 로그인 SDK 의존성 추가
+    implementation("com.navercorp.nid:oauth:5.9.1")
 }

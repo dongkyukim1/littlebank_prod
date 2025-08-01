@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import '../../../widgets/common/bottom_navigation_bar.dart';
-import 'point_information.dart';
+import '../../../services/payment_service.dart'; // PaymentService import 추가
+import '../../../services/auth_service.dart'; // AuthService import 추가
 
-// 도넛 차트의 호(arc)를 그리는 CustomPainter
 class ArcPainter extends CustomPainter {
   final Color color;
   final double startAngle;
@@ -23,28 +22,31 @@ class ArcPainter extends CustomPainter {
       width: size.width,
       height: size.height,
     );
-    
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;  // 채우기 스타일로 변경
-    
+
+    final paint =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill; // 채우기 스타일로 변경
+
     // 외부 원
     canvas.drawArc(
       rect,
       startAngle,
       sweepAngle,
-      true,  // true로 변경하여 부채꼴 형태로 채우기
+      true, // true로 변경하여 부채꼴 형태로 채우기
       paint,
     );
 
     // 내부 원을 잘라내어 도넛 모양 만들기
-    final innerCircle = Path()
-      ..addOval(Rect.fromCenter(
-        center: center,
-        width: size.width * 0.6,  // 내부 원 크기 조정
-        height: size.height * 0.6,
-      ));
-    
+    final innerCircle =
+        Path()..addOval(
+          Rect.fromCenter(
+            center: center,
+            width: size.width * 0.6, // 내부 원 크기 조정
+            height: size.height * 0.6,
+          ),
+        );
+
     canvas.drawPath(
       Path.combine(
         PathOperation.difference,
@@ -63,675 +65,332 @@ class ArcPainter extends CustomPainter {
 
 class PointHistoryScreen extends StatefulWidget {
   final int initialTabIndex;
-  
-  const PointHistoryScreen({
-    super.key,
-    this.initialTabIndex = 0,
-  });
+
+  const PointHistoryScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<PointHistoryScreen> createState() => _PointHistoryScreenState();
 }
 
-class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTickerProviderStateMixin {
+class _PointHistoryScreenState extends State<PointHistoryScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   // 추가: 친구들 비교 섹션 확장 여부
-  bool _isRankingExpanded = false;
-  
+  final bool _isRankingExpanded = false;
+
+  // 총 포인트 정보
+  int _totalPoints = 0;
+  int _currentPoints = 0;
+
+  // 들어온 포인트 내역 데이터
+  List<Map<String, dynamic>> _receivedPointHistoryData = [];
+
+  // 로딩 상태
+  bool _isLoading = true;
+  bool _isHistoryLoading = false;
+
+  // 에러 메시지
+  String? _errorMessage;
+  String? _historyError;
+
+  // 날짜 범위 상태 변수 수정
+  late DateTime _startDate;
+  late DateTime _endDate;
+  bool _isAllPeriod = true;
+  bool _isInitialized = false; // 초기화 여부 체크를 위한 플래그 추가
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2, 
+      length: 2,
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
+    // Initialize _startDate and _endDate with default values
+    _startDate = DateTime.now().subtract(
+      const Duration(days: 30),
+    ); // 기본값: 1개월 전
+    _endDate = DateTime.now(); // 기본값: 오늘
+    _isInitialized =
+        false; // Reset _isInitialized as it's set in _loadReceivedPointHistory
+
+    _loadPointInfo();
+    _loadReceivedPointHistory();
   }
 
-  // 날짜 범위 상태 변수 추가
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 365));
-  DateTime _endDate = DateTime.now();
-  bool _isAllPeriod = true; // 전체 기간 선택 여부
-  
-  // 필터링 카테고리 상태
-  final String _selectedCategory = '전체'; // 기본값은 '전체'
+  // 포인트 정보 로딩
+  Future<void> _loadPointInfo() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          '총 적립 내역',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Image.asset(
-              'assets/images/home.png', 
-              width: 24, 
-              height: 24,
-            ),
-            onPressed: () {
-              // 홈으로 이동
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 적립금/포인트 탭 추가 - 고정 부분
-          Container(
-            width: MediaQuery.of(context).size.width,
-            height: 50, // 높이 증가
-            child: Stack(
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    // 적립금 탭 (현재 선택됨)
-                    Expanded(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              width: 2.0,
-                              color: Color(0xFF202020), // 검은색 밑줄
-                            ),
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '적립금',
-                            style: TextStyle(
-                              color: Color(0xFF202020),
-                              fontSize: 18, // 글씨 크기 증가
-                              fontFamily: 'Pretendard',
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: -0.32,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    // 간격 추가
-                    SizedBox(width: 20),
-                    
-                    // 포인트 탭 (클릭 시 이동)
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pushReplacement(
-                            context, 
-                            MaterialPageRoute(builder: (context) => const PointInformationScreen())
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                width: 1.0,
-                                color: Color(0xFFE5E5E5), // 회색 밑줄
-                              ),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '포인트',
-                              style: TextStyle(
-                                color: Color(0xFFC4C4C4),
-                                fontSize: 18, // 글씨 크기 증가
-                                fontFamily: 'Pretendard',
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: -0.32,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          // 나머지 부분은 스크롤 가능하게
-          Expanded(
-            child: CustomScrollView(
-              slivers: [
-                // 총 적립금 정보 카드
-                SliverToBoxAdapter(
-                  child: _buildTotalPointsCard(),
-                ),
-                
-                // 도넛 차트 영역
-                SliverToBoxAdapter(
-                  child: _buildSimplifiedDonutChartSection(),
-                ),
-                
-                // 구분선
-                SliverToBoxAdapter(
-                  child: Container(
-                    width: double.infinity,
-                    height: 6,
-                    decoration: ShapeDecoration(
-                      color: const Color(0xFFEFF2F6),
-                      shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          width: 0.10,
-                          color: const Color(0xFF8490A3),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // 카테고리 필터링 버튼 - 스크롤 시 상단에 고정되도록
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SliverCategoryButtonsDelegate(),
-                ),
-                
-                // 전체 내역 수 및 검색 헤더
-                SliverToBoxAdapter(
-                  child: _buildHistoryHeader(),
-                ),
-                
-                // 내역 리스트
-                SliverToBoxAdapter(
-                  child: _buildHistoryList(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const CommonBottomNavigationBar(selectedIndex: 4),
-    );
+      // 현재 포인트는 유저 정보에서 가져오기
+      final userInfo = await AuthService.getUserInfo();
+      final currentPoints = userInfo['point'] ?? 0;
+
+      // 총 포인트는 받은 포인트와 충전한 포인트 합산으로 계산
+      final totalPoints = await _calculateTotalAccumulatedPoints();
+
+      if (mounted) {
+        setState(() {
+          _currentPoints = currentPoints;
+          _totalPoints = totalPoints > 0 ? totalPoints : currentPoints;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+      print('포인트 정보 로딩 오류: $e');
+    }
   }
 
-  // 총 적립금 정보 카드 (도넛 차트 제외)
-  Widget _buildTotalPointsCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 설명 텍스트
-          Padding(
-            padding: EdgeInsets.only(bottom: 8), // 간격 6px → 8px로 늘림
-            child: Text(
-              '오늘까지 모은 총 적립금이',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                height: 1.0,
-              ),
-            ),
-          ),
+  // 총 누적 포인트 계산 (받은 포인트 + 충전한 포인트)
+  Future<int> _calculateTotalAccumulatedPoints() async {
+    try {
+      int totalReceived = 0;
+      int totalCharged = 0;
 
-          // 총 금액
-          Text(
-            '415,000원',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              height: 1.0, // 줄 높이 유지
-            ),
-          ),
+      // 1. 받은 포인트 총합 계산
+      int receivedPage = 0;
+      bool hasMoreReceivedData = true;
 
-          const SizedBox(height: 12), // 간격 8px → 12px로 증가
-
-          // 전월 대비
-          Row(
-            children: [
-              Text(
-                '지난 달보다 ',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13, 
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              Text(
-                '+ 113,000원',
-                style: TextStyle(
-                  color: const Color(0xFF3A88F4),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                '이 늘었어요!',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-  
-  // 간소화된 도넛 차트 영역 (리뱅인들 비교 영역 제거)
-  Widget _buildSimplifiedDonutChartSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFFF0F6FF),  // 연한 하늘색 시작 (#F0F6FF)
-            const Color(0xFF5D9EFF),  // 파란색으로 그라데이션 (#5D9EFF)
-          ],
-          begin: Alignment.topLeft,  // 왼쪽 위에서 시작
-          end: Alignment.bottomRight,  // 오른쪽 아래로 끝
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: ShapeDecoration(
-            gradient: LinearGradient(
-              begin: Alignment(0.01, 0.03),
-              end: Alignment(1.02, 0.97),
-              colors: [
-                Colors.white.withOpacity(0.4),
-                Colors.white.withOpacity(0.55),
-              ],
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 가로로 나란히 배치된 막대
-              Row(
-                children: [
-                  // 미션 막대
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      height: 14, // 약간 줄임
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF146AFF),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  // 챌린지 막대
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      height: 14, // 약간 줄임
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10CB86),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  // 목표 막대
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      height: 14, // 약간 줄임
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFD27F),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 8),
-              
-              // 아이콘과 텍스트 (한 줄로 간결하게)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  // 미션
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF146AFF),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '미션 31,000원',
-                        style: TextStyle(
-                          color: Color(0xFF353535),
-                          fontSize: 10,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  // 챌린지
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10CB86),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '챌린지 31,000원',
-                        style: TextStyle(
-                          color: Color(0xFF353535),
-                          fontSize: 10,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  // 목표
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFD27F),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '목표 31,000원',
-                        style: TextStyle(
-                          color: Color(0xFF353535),
-                          fontSize: 10,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 내역 헤더 (전체 내역 수 및 검색 아이콘)
-  Widget _buildHistoryHeader() {
-    return Column(
-      children: [
-        // 내역 수 및 검색
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 전체 내역 수
-              Row(
-                children: [
-                  Text(
-                    '전체 내역 ',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '80',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-
-              // 정렬 아이콘
-              GestureDetector(
-                onTap: _showFilterBottomSheet,
-                child: Icon(Icons.tune, color: Colors.grey[500], size: 22),
-              ),
-            ],
-          ),
-        ),
-        
-        // 검색 아이콘
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          alignment: Alignment.centerLeft,
-          child: Icon(
-            Icons.search,
-            color: Colors.grey[400],
-            size: 24,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 내역 리스트 수정
-  Widget _buildHistoryList() {
-    // 더미 데이터 - 날짜별로 그룹화
-    final List<Map<String, dynamic>> dateSections = [
-      {
-        'date': '4월 15일 화요일',
-        'items': [
-          {
-            'title': '3월 생애주기 가족 미션 이름',
-            'amount': '+34,000원',
-            'date': '금요일 · 13:30',
-            'totalAmount': '415,000원',
-          },
-          {
-            'title': '3월 생애주기 가족 미션 이름',
-            'amount': '+34,000원',
-            'date': '금요일 · 13:30',
-            'totalAmount': '415,000원',
-          },
-        ],
-      },
-      {
-        'date': '4월 14일 최신순',
-        'items': [
-          {
-            'title': '3월 생애주기 가족 미션 이름',
-            'amount': '+34,000원',
-            'date': '금요일 · 13:30',
-            'totalAmount': '415,000원',
-          },
-          {
-            'title': '3월 생애주기 가족 미션 이름',
-            'amount': '+34,000원',
-            'date': '금요일 · 13:30',
-            'totalAmount': '415,000원',
-          },
-          {
-            'title': '3월 생애주기 가족 미션 이름',
-            'amount': '+34,000원',
-            'date': '금요일 · 13:30',
-            'totalAmount': '415,000원',
-          },
-        ],
-      },
-    ];
-
-    // 각 섹션을 미리 준비
-    List<Widget> sectionWidgets = [];
-    
-    for (int sectionIndex = 0; sectionIndex < dateSections.length; sectionIndex++) {
-      final section = dateSections[sectionIndex];
-      
-      // 날짜 헤더 추가
-      sectionWidgets.add(
-        Container(
-          padding: EdgeInsets.fromLTRB(20, sectionIndex == 0 ? 10 : 24, 20, 4),
-          alignment: Alignment.centerLeft,
-          child: Text(
-            section['date'],
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        )
-      );
-      
-      // 아이템 추가
-      final List items = section['items'];
-      for (int index = 0; index < items.length; index++) {
-        final item = items[index];
-        final isLast = index == items.length - 1 && sectionIndex == dateSections.length - 1;
-        
-        sectionWidgets.add(
-          _buildHistoryItem(
-            title: item['title'],
-            amount: item['amount'],
-            date: item['date'],
-            totalAmount: item['totalAmount'],
-          )
+      while (hasMoreReceivedData) {
+        final receivedHistory = await PaymentService.getReceivedPointHistory(
+          pageNumber: receivedPage,
         );
-        
-        if (!isLast) {
-          sectionWidgets.add(
-            Divider(
-              height: 1,
-              color: Colors.grey.withOpacity(0.1),
-              indent: 20,
-              endIndent: 20,
-            )
-          );
+
+        if (receivedHistory.containsKey('data') &&
+            receivedHistory['data'] is List) {
+          final List<dynamic> receivedList = receivedHistory['data'];
+
+          if (receivedList.isEmpty) {
+            hasMoreReceivedData = false;
+            break;
+          }
+
+          // 각 받은 포인트의 pointAmount를 누적
+          for (final received in receivedList) {
+            if (received.containsKey('pointAmount')) {
+              final pointAmount = received['pointAmount'] ?? 0;
+              totalReceived += pointAmount as int;
+            }
+          }
+
+          // 다음 페이지가 있는지 확인
+          final totalPage = receivedHistory['totalPage'] ?? 1;
+          if (receivedPage >= totalPage - 1) {
+            hasMoreReceivedData = false;
+          } else {
+            receivedPage++;
+          }
+        } else {
+          hasMoreReceivedData = false;
         }
       }
-    }
 
-    return Column(
-      children: sectionWidgets,
-    );
+      // 2. 충전한 포인트 총합 계산
+      int chargePage = 0;
+      bool hasMoreChargeData = true;
+
+      while (hasMoreChargeData) {
+        final chargeHistory = await PaymentService.getChargeHistory(
+          pageNumber: chargePage,
+        );
+
+        if (chargeHistory.containsKey('data') &&
+            chargeHistory['data'] is List) {
+          final List<dynamic> chargeList = chargeHistory['data'];
+
+          if (chargeList.isEmpty) {
+            hasMoreChargeData = false;
+            break;
+          }
+
+          // 각 충전 내역의 pointAmount를 누적
+          for (final charge in chargeList) {
+            if (charge.containsKey('pointAmount')) {
+              final pointAmount = charge['pointAmount'] ?? 0;
+              totalCharged += pointAmount as int;
+            }
+          }
+
+          // 다음 페이지가 있는지 확인
+          final totalPage = chargeHistory['totalPage'] ?? 1;
+          if (chargePage >= totalPage - 1) {
+            hasMoreChargeData = false;
+          } else {
+            chargePage++;
+          }
+        } else {
+          hasMoreChargeData = false;
+        }
+      }
+
+      final totalAccumulated = totalReceived + totalCharged;
+      print('받은 포인트 총합: $totalReceived');
+      print('충전한 포인트 총합: $totalCharged');
+      print('총 누적 포인트: $totalAccumulated');
+
+      return totalAccumulated;
+    } catch (e) {
+      print('총 누적 포인트 계산 오류: $e');
+      return 0;
+    }
   }
 
-  // 내역 아이템
-  Widget _buildHistoryItem({
-    required String title,
-    required String amount,
-    required String date,
-    required String totalAmount,
-  }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-      color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 제목 및 금액
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Text(
-                amount,
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+  // 필터링된 포인트 내역 로딩
+  Future<void> _loadReceivedPointHistory() async {
+    try {
+      setState(() {
+        _isHistoryLoading = true;
+        _historyError = null;
+      });
 
-          const SizedBox(height: 6),
+      // PaymentService에서 들어온 포인트 내역 가져오기
+      final historyResponse = await PaymentService.getReceivedPointHistory(
+        pageNumber: 0,
+      );
 
-          // 날짜 및 총액
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                date,
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              Text(
-                totalAmount,
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+      if (mounted) {
+        setState(() {
+          if (historyResponse.containsKey('data') &&
+              historyResponse['data'] is List) {
+            final allData = List<Map<String, dynamic>>.from(
+              historyResponse['data'],
+            );
+
+            // 서버의 가장 오래된 날짜와 최신 날짜 찾기
+            DateTime? oldestDate;
+            DateTime? latestDate;
+            for (var item in allData) {
+              if (item['receivedAt'] != null) {
+                try {
+                  final date = DateTime.parse(item['receivedAt']);
+                  if (oldestDate == null || date.isBefore(oldestDate)) {
+                    oldestDate = date;
+                  }
+                  if (latestDate == null || date.isAfter(latestDate)) {
+                    latestDate = date;
+                  }
+                } catch (e) {
+                  print('날짜 파싱 오류: $e');
+                }
+              }
+            }
+
+            // 처음 로드할 때만 날짜 범위 설정
+            if (!_isInitialized) {
+              if (oldestDate != null && latestDate != null) {
+                _startDate = oldestDate;
+                _endDate = latestDate;
+              } else {
+                // API에서 유효한 날짜를 가져오지 못한 경우, 기본값으로 설정
+                // initState에서도 초기화하지만, 여기서 한 번 더 보장합니다.
+                _startDate = DateTime.now().subtract(const Duration(days: 30));
+                _endDate = DateTime.now();
+              }
+              _isInitialized = true;
+            }
+
+            print('가장 오래된 날짜: $oldestDate');
+            print('가장 최근 날짜: $latestDate');
+            print('선택된 시작일: $_startDate');
+            print('선택된 종료일: $_endDate');
+            print('전체 기간 모드: $_isAllPeriod');
+
+            // 날짜 필터 적용
+            if (_isAllPeriod) {
+              _receivedPointHistoryData = allData;
+            } else {
+              // 시작일의 00:00:00부터 종료일의 23:59:59까지 포함
+              final startDateTime = DateTime(
+                _startDate.year,
+                _startDate.month,
+                _startDate.day,
+                0,
+                0,
+                0,
+              );
+              final endDateTime = DateTime(
+                _endDate.year,
+                _endDate.month,
+                _endDate.day,
+                23,
+                59,
+                59,
+              );
+
+              print('필터링 시작일시: $startDateTime');
+              print('필터링 종료일시: $endDateTime');
+
+              _receivedPointHistoryData =
+                  allData.where((item) {
+                    if (item['receivedAt'] == null) return false;
+                    try {
+                      // UTC 시간을 파싱
+                      final itemDate = DateTime.parse(item['receivedAt']);
+                      print('아이템 날짜: $itemDate');
+
+                      // 년, 월, 일만 비교
+                      final itemYMD = DateTime(
+                        itemDate.year,
+                        itemDate.month,
+                        itemDate.day,
+                      );
+                      final startYMD = DateTime(
+                        startDateTime.year,
+                        startDateTime.month,
+                        startDateTime.day,
+                      );
+                      final endYMD = DateTime(
+                        endDateTime.year,
+                        endDateTime.month,
+                        endDateTime.day,
+                      );
+
+                      // 날짜 비교 (같은 날짜도 포함)
+                      final isInRange =
+                          itemYMD.compareTo(startYMD) >= 0 &&
+                          itemYMD.compareTo(endYMD) <= 0;
+
+                      print('날짜 비교 - 아이템: $itemYMD');
+                      print('시작일: $startYMD');
+                      print('종료일: $endYMD');
+                      print('범위 내 포함 여부: $isInRange');
+
+                      return isInRange;
+                    } catch (e) {
+                      print('날짜 파싱 오류: $e');
+                      return false;
+                    }
+                  }).toList();
+
+              print('필터링된 데이터 수: ${_receivedPointHistoryData.length}');
+            }
+          } else {
+            _receivedPointHistoryData = [];
+          }
+          _isHistoryLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _historyError = e.toString();
+          _isHistoryLoading = false;
+        });
+      }
+      print('들어온 포인트 내역 로딩 오류: $e');
+    }
   }
 
   // 필터 바텀 시트 표시
@@ -743,7 +402,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
       backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setStateBottomSheet) {
             return Container(
               width: MediaQuery.of(context).size.width,
               constraints: BoxConstraints(
@@ -778,8 +437,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                             '적립 내역을 조회할 기간을 정해주세요',
                             style: TextStyle(
                               fontSize: 16,
-                              fontFamily: 'Pretendard',
-                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Pretendard-Bold',
                               color: Color(0xFF202020),
                             ),
                           ),
@@ -796,8 +454,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                         '원하는 기간별로 적립 내역을 나눠볼 수 있어요',
                         style: TextStyle(
                           fontSize: 12,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w300,
+                          fontFamily: 'Pretendard-Light',
                           color: Color(0xFF999999),
                         ),
                       ),
@@ -813,11 +470,8 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                             height: 36,
                             child: ElevatedButton(
                               onPressed: () {
-                                setState(() {
+                                setStateBottomSheet(() {
                                   _isAllPeriod = true;
-                                  _startDate = DateTime.now().subtract(
-                                    const Duration(days: 365 * 3),
-                                  );
                                 });
                               },
                               style: ElevatedButton.styleFrom(
@@ -840,8 +494,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                                 '전체',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontFamily: 'Pretendard',
-                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Pretendard-Medium',
                                 ),
                               ),
                             ),
@@ -852,11 +505,12 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                             height: 36,
                             child: ElevatedButton(
                               onPressed: () {
-                                setState(() {
+                                setStateBottomSheet(() {
                                   _isAllPeriod = false;
                                   _startDate = DateTime.now().subtract(
                                     const Duration(days: 30),
                                   );
+                                  _endDate = DateTime.now();
                                 });
                               },
                               style: ElevatedButton.styleFrom(
@@ -879,8 +533,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                                 '1개월',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontFamily: 'Pretendard',
-                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'Pretendard-Medium',
                                 ),
                               ),
                             ),
@@ -899,11 +552,13 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                                 final picked = await showDatePicker(
                                   context: context,
                                   initialDate: _startDate,
-                                  firstDate: DateTime(2020),
+                                  firstDate: _startDate.subtract(
+                                    Duration(days: 365 * 5),
+                                  ), // 5년 전까지
                                   lastDate: _endDate,
                                 );
                                 if (picked != null) {
-                                  setState(() {
+                                  setStateBottomSheet(() {
                                     _startDate = picked;
                                     _isAllPeriod = false;
                                   });
@@ -937,12 +592,12 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                                   context: context,
                                   initialDate: _endDate,
                                   firstDate: _startDate,
-                                  lastDate: DateTime.now().add(
-                                    const Duration(days: 365),
-                                  ),
+                                  lastDate: _endDate.add(
+                                    Duration(days: 365),
+                                  ), // 1년 후까지
                                 );
                                 if (picked != null) {
-                                  setState(() {
+                                  setStateBottomSheet(() {
                                     _endDate = picked;
                                     _isAllPeriod = false;
                                   });
@@ -990,8 +645,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                                   '취소',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w100,
+                                    fontFamily: 'Pretendard-Medium',
                                     color: Colors.grey[500],
                                   ),
                                 ),
@@ -1005,10 +659,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                               height: 49,
                               child: ElevatedButton(
                                 onPressed: () {
-                                  // 필터 적용 로직 구현
-                                  setState(() {
-                                    // 여기서 적용된 필터로 데이터를 다시 로드할 수 있음
-                                  });
+                                  _loadReceivedPointHistory();
                                   Navigator.pop(context);
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -1024,8 +675,7 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
                                   '완료',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w100,
+                                    fontFamily: 'Pretendard-ExtraLight',
                                     color: Colors.white,
                                   ),
                                 ),
@@ -1044,13 +694,885 @@ class _PointHistoryScreenState extends State<PointHistoryScreen> with SingleTick
       },
     );
   }
+
+  // 내역 헤더 (전체 내역 수 및 검색 아이콘)
+  Widget _buildHistoryHeader() {
+    return Column(
+      children: [
+        // 상단 여백 추가
+        SizedBox(height: 16),
+
+        // 전체 내역 수 + 필터 아이콘 (실제 데이터 기반)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _isAllPeriod
+                            ? '전체'
+                            : '${_formatDateCompact(_startDate)} ~ ${_formatDateCompact(_endDate)}',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 16,
+                          fontFamily: 'Pretendard-Medium',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      ' ${_receivedPointHistoryData.length}',
+                      style: TextStyle(
+                        color: const Color(0xFF5D9EFF),
+                        fontSize: 16,
+                        fontFamily: 'Pretendard-SemiBold',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // 필터 아이콘
+              GestureDetector(
+                onTap: _showFilterBottomSheet,
+                child: Image.asset(
+                  'assets/icons/my/필터.png',
+                  width: 22,
+                  height: 22,
+                  color: Color.fromRGBO(166, 169, 174, 1.0),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 내역 목록과의 간격
+        SizedBox(height: 6),
+      ],
+    );
+  }
+
+  // 내역 리스트 (실제 API 데이터 사용)
+  Widget _buildHistoryList() {
+    if (_isHistoryLoading) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(color: Color(0xFF5D9DFF)),
+        ),
+      );
+    }
+
+    if (_historyError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(30.0),
+          child: Column(
+            children: [
+              Text(
+                '포인트 내역을 불러오지 못했습니다',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 14,
+                  fontFamily: 'Pretendard-Medium',
+                ),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _loadReceivedPointHistory,
+                child: Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_receivedPointHistoryData.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(50.0),
+          child: Column(
+            children: [
+              Icon(
+                Icons.account_balance_wallet,
+                size: 48,
+                color: Colors.grey[400],
+              ),
+              SizedBox(height: 16),
+              Text(
+                '아직 받은 포인트가 없습니다',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                  fontFamily: 'Pretendard-Medium',
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                '미션과 챌린지를 해서 포인트를 받아보세요!',
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 12,
+                  fontFamily: 'Pretendard-Light',
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 날짜별로 그룹화 (최신순 정렬)
+    Map<String, List<Map<String, dynamic>>> groupedData = {};
+    for (var item in _receivedPointHistoryData) {
+      final dateKey = _formatDate(item['receivedAt'] ?? '');
+      if (!groupedData.containsKey(dateKey)) {
+        groupedData[dateKey] = [];
+      }
+      groupedData[dateKey]!.add(item);
+    }
+
+    // 날짜별로 정렬 (최신순)
+    final sortedDates =
+        groupedData.keys.toList()..sort((a, b) {
+          try {
+            final aDate = DateTime.parse(
+              a.replaceAll(RegExp(r'[월일요]'), '').trim(),
+            );
+            final bDate = DateTime.parse(
+              b.replaceAll(RegExp(r'[월일요]'), '').trim(),
+            );
+            return bDate.compareTo(aDate); // 최신순 정렬
+          } catch (_) {
+            return 0;
+          }
+        });
+
+    List<Widget> sectionWidgets = [];
+
+    int sectionIndex = 0;
+    for (final dateKey in sortedDates) {
+      final items = groupedData[dateKey]!;
+
+      // 날짜 헤더 추가
+      sectionWidgets.add(
+        Container(
+          padding: EdgeInsets.fromLTRB(20, sectionIndex == 0 ? 10 : 24, 20, 4),
+          alignment: Alignment.centerLeft,
+          child: Text(
+            dateKey,
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: 12,
+              fontFamily: 'Pretendard-Light',
+            ),
+          ),
+        ),
+      );
+
+      // 아이템 추가 (시간순 정렬)
+      items.sort((a, b) {
+        final aTime = a['receivedAt'] ?? '';
+        final bTime = b['receivedAt'] ?? '';
+        return bTime.compareTo(aTime); // 최신순 정렬
+      });
+
+      for (final item in items) {
+        sectionWidgets.add(
+          _buildHistoryItem(
+            title: '포인트 받음',
+            senderName: item['senderName'] ?? '알 수 없는 사용자',
+            amount: '+${_formatCurrency(item['pointAmount'] ?? 0)}원',
+            time: _formatTime(item['receivedAt'] ?? ''),
+            totalAmount: '${_formatCurrency(item['remainingPoint'] ?? 0)}원',
+            message: item['message'],
+          ),
+        );
+      }
+
+      sectionIndex++;
+    }
+
+    return Column(children: sectionWidgets);
+  }
+
+  // 내역 아이템 (실제 데이터 기반)
+  Widget _buildHistoryItem({
+    required String title,
+    required String senderName,
+    required String amount,
+    required String time,
+    required String totalAmount,
+    String? message,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.white,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 왼쪽 정보 (제목, 메시지, 보낸사람)
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 제목
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: const Color(0xFF001F55),
+                        fontSize: 16,
+                        fontFamily: 'Pretendard-Medium',
+                        letterSpacing: -0.64,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+
+                    // 메시지 (있는 경우)
+                    if (message != null && message.isNotEmpty) ...[
+                      Text(
+                        '"$message"',
+                        style: TextStyle(
+                          color: const Color(0xFF8490A3),
+                          fontSize: 12,
+                          fontFamily: 'Pretendard-Light',
+                          letterSpacing: -0.24,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                    ],
+
+                    // 보낸사람과 시간
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$senderName님이 보냄',
+                          style: TextStyle(
+                            color: const Color(0xFF8490A3),
+                            fontSize: 12,
+                            fontFamily: 'Pretendard-Light',
+                            letterSpacing: -0.24,
+                          ),
+                        ),
+                        Container(
+                          width: 2,
+                          height: 2,
+                          margin: EdgeInsets.symmetric(horizontal: 8),
+                          decoration: ShapeDecoration(
+                            color: const Color(0xFF8490A3),
+                            shape: OvalBorder(),
+                          ),
+                        ),
+                        Text(
+                          time,
+                          style: TextStyle(
+                            color: const Color(0xFF8490A3),
+                            fontSize: 12,
+                            fontFamily: 'Pretendard-Light',
+                            letterSpacing: -0.24,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // 오른쪽 금액 정보
+              Container(
+                width: 120,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      amount,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFF3A88F4),
+                        fontSize: 16,
+                        fontFamily: 'Pretendard-Bold',
+                        letterSpacing: -0.64,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      totalAmount,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFF8490A3),
+                        fontSize: 12,
+                        fontFamily: 'Pretendard-Light',
+                        letterSpacing: -0.24,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 총 포인트 정보 카드 (실제 데이터 사용)
+  Widget _buildTotalPointsCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(color: Colors.white),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '오늘까지 모은 총 포인트가',
+                style: TextStyle(
+                  color: const Color(0xFF202020),
+                  fontSize: 16,
+                  fontFamily: 'Pretendard-Bold',
+                  height: 1.3,
+                  letterSpacing: -0.72,
+                ),
+              ),
+              SizedBox(height: 1),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '${_formatCurrency(_totalPoints)}원',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: const Color(0xFF202020),
+                      fontSize: 26,
+                      fontFamily: 'Pretendard-Bold',
+                      letterSpacing: -1.12,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Container(
+                    width: 20,
+                    height: 20,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(),
+                  ),
+                ],
+              ),
+              SizedBox(height: 4),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '현재 보유 포인트는 ',
+                      style: TextStyle(
+                        color: const Color(0xFF999999),
+                        fontSize: 14,
+                        fontFamily: 'Pretendard-Light',
+                        letterSpacing: -0.32,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '${_formatCurrency(_currentPoints)}원',
+                      style: TextStyle(
+                        color: const Color(0xFF3A88F4),
+                        fontSize: 14,
+                        fontFamily: 'Pretendard-Bold',
+                        letterSpacing: -0.32,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '입니다!',
+                      style: TextStyle(
+                        color: const Color(0xFF999999),
+                        fontSize: 14,
+                        fontFamily: 'Pretendard-Light',
+                        letterSpacing: -0.32,
+                      ),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 프로그레스바 섹션
+  Widget _buildProgressBarsSection() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment(-0.00, 0.20),
+          end: Alignment(1.00, 0.99),
+          colors: [
+            Color.fromRGBO(180, 215, 255, 1), // 더 진한 파란색으로 시작
+            Color.fromRGBO(93, 158, 255, 1), // rgba(93, 158, 255, 1)
+          ],
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              decoration: ShapeDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment(0.01, 0.03),
+                  end: Alignment(1.02, 0.97),
+                  colors: [
+                    Colors.white.withOpacity(0.4),
+                    Colors.white.withOpacity(0.55),
+                  ],
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 프로그레스바 - 일렬로 배치
+                  Row(
+                    children: [
+                      // 미션 프로그레스바 (33%)
+                      Expanded(
+                        flex: 33,
+                        child: Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF146AFF),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(4),
+                              bottomLeft: Radius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 여백 추가
+                      SizedBox(width: 2),
+
+                      // 챌린지 프로그레스바 (33%)
+                      Expanded(
+                        flex: 33,
+                        child: Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10CB86),
+                          ),
+                        ),
+                      ),
+
+                      // 여백 추가
+                      SizedBox(width: 2),
+
+                      // 목표 프로그레스바 (33%)
+                      Expanded(
+                        flex: 34,
+                        child: Container(
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD27F),
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(4),
+                              bottomRight: Radius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 16),
+
+                  // 범례 - 미션, 챌린지, 목표를 균등하게 배치
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      // 미션
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF146AFF),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            SizedBox(width: 2),
+                            Flexible(
+                              child: Text(
+                                '미션 31,000원',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: const Color(0xFF353535),
+                                  fontSize: 10.5,
+                                  fontFamily: 'Pretendard-Medium',
+                                  letterSpacing: -0.24,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(width: 4),
+
+                      // 챌린지
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10CB86),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            SizedBox(width: 2),
+                            Flexible(
+                              child: Text(
+                                '챌린지 31,000원',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: const Color(0xFF353535),
+                                  fontSize: 10.5,
+                                  fontFamily: 'Pretendard-Medium',
+                                  letterSpacing: -0.24,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(width: 4),
+
+                      // 목표
+                      Expanded(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFD27F),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            SizedBox(width: 2),
+                            Flexible(
+                              child: Text(
+                                '목표 31,000원',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: const Color(0xFF353535),
+                                  fontSize: 10.5,
+                                  fontFamily: 'Pretendard-Medium',
+                                  letterSpacing: -0.24,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 날짜 포맷팅 (MM월 dd일 요일)
+  String _formatDate(String isoDate) {
+    try {
+      final DateTime date = DateTime.parse(isoDate);
+      final List<String> weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+      final String weekday = weekdays[date.weekday - 1];
+      return '${date.month}월 ${date.day}일 ${weekday}요일';
+    } catch (e) {
+      return isoDate;
+    }
+  }
+
+  // 날짜 포맷팅 (YYYY.MM.dd)
+  String _formatDateCompact(DateTime date) {
+    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+  }
+
+  // 시간 포맷팅 (HH:mm)
+  String _formatTime(String isoDate) {
+    try {
+      final DateTime date = DateTime.parse(isoDate);
+      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // 금액 포맷팅 (천 단위 콤마)
+  String _formatCurrency(dynamic amount) {
+    final int value =
+        amount is int ? amount : int.tryParse(amount.toString()) ?? 0;
+    return value.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          '총 포인트 적립 내역',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: Image.asset('assets/icons/my/뒤로가기.png', width: 20, height: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Column(
+        children: [
+          // 나머지 부분은 스크롤 가능하게
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                // 총 포인트 정보 카드
+                SliverToBoxAdapter(child: _buildTotalPointsCard()),
+
+                // 프로그레스바 섹션 추가
+                SliverToBoxAdapter(child: _buildProgressBarsSection()),
+
+                // 구분선
+                SliverToBoxAdapter(
+                  child: Container(
+                    width: double.infinity,
+                    height: 6,
+                    decoration: ShapeDecoration(
+                      color: const Color(0xFFE7ECF6),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(
+                          width: 0.10,
+                          color: const Color(0xFF8490A3),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 필터 버튼 추가 (구분선 아래로 이동)
+                SliverToBoxAdapter(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // 대상 버튼
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: ShapeDecoration(
+                                    color: const Color(0xFF5C697E),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '대상',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontFamily: 'Pretendard-Medium',
+                                          letterSpacing: -0.28,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Image.asset(
+                                        'assets/icons/my/droddown.png',
+                                        width: 16,
+                                        height: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              // 과목별 버튼
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: ShapeDecoration(
+                                    color: const Color(0xFF5C697E),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '과목별',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontFamily: 'Pretendard-Medium',
+                                          letterSpacing: -0.28,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Image.asset(
+                                        'assets/icons/my/droddown.png',
+                                        width: 16,
+                                        height: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              // 활동별 버튼
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: ShapeDecoration(
+                                    color: const Color(0xFF5C697E),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '활동별',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontFamily: 'Pretendard-Medium',
+                                          letterSpacing: -0.28,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Image.asset(
+                                        'assets/icons/my/droddown.png',
+                                        width: 16,
+                                        height: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 전체 내역 수 및 검색 헤더
+                SliverToBoxAdapter(child: _buildHistoryHeader()),
+
+                // 내역 리스트
+                SliverToBoxAdapter(child: _buildHistoryList()),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: const CommonBottomNavigationBar(selectedIndex: 4),
+    );
+  }
 }
 
 // 클래스 추가
 class DoughnutClipper extends CustomClipper<Path> {
   final double startAngle;
   final double sweepAngle;
-  
+
   DoughnutClipper({required this.startAngle, required this.sweepAngle});
 
   @override
@@ -1062,12 +1584,13 @@ class DoughnutClipper extends CustomClipper<Path> {
       height: size.height,
     );
 
-    final path = Path()
-      ..moveTo(center.dx, center.dy)
-      ..addArc(rect, startAngle, sweepAngle)
-      ..lineTo(center.dx, center.dy)
-      ..close();
-    
+    final path =
+        Path()
+          ..moveTo(center.dx, center.dy)
+          ..addArc(rect, startAngle, sweepAngle)
+          ..lineTo(center.dx, center.dy)
+          ..close();
+
     return path;
   }
 
@@ -1076,172 +1599,3 @@ class DoughnutClipper extends CustomClipper<Path> {
     return true;
   }
 }
-// 카테고리 버튼을 위한 SliverPersistentHeaderDelegate 구현
-class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            offset: Offset(0, 4),
-            blurRadius: 10,
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // 전체 버튼
-            Container(
-              height: 36, // 높이 감소
-              width: 70, // 너비 감소
-              decoration: BoxDecoration(
-                color: const Color(0xFF3A88F4),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    offset: Offset(0, 2),
-                    blurRadius: 4,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '전체',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14, // 글씨 크기 감소
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            
-            const SizedBox(width: 12), // 버튼 간 간격
-            
-            // 미션 버튼
-            Container(
-              height: 36, // 높이 감소
-              width: 70, // 너비 감소
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFF5D9EFF),
-                  width: 0.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    offset: Offset(0, 2),
-                    blurRadius: 4,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '미션',
-                style: TextStyle(
-                  color: const Color(0xFF3A88F4),
-                  fontSize: 14, // 글씨 크기 감소
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-            ),
-            
-            const SizedBox(width: 12), // 버튼 간 간격
-            
-            // 챌린지 버튼
-            Container(
-              height: 36, // 높이 감소
-              width: 70, // 너비 감소
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFF5D9EFF),
-                  width: 0.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    offset: Offset(0, 2),
-                    blurRadius: 4,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '챌린지',
-                style: TextStyle(
-                  color: const Color(0xFF3A88F4),
-                  fontSize: 14, // 글씨 크기 감소
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-            ),
-            
-            const SizedBox(width: 12), // 버튼 간 간격
-            
-            // 목표 버튼
-            Container(
-              height: 36, // 높이 감소
-              width: 70, // 너비 감소
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFF5D9EFF),
-                  width: 0.8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    offset: Offset(0, 2),
-                    blurRadius: 4,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '목표',
-                style: TextStyle(
-                  color: const Color(0xFF3A88F4),
-                  fontSize: 14, // 글씨 크기 감소
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w300,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  double get maxExtent => 60.0; // 높이 설정 감소
-
-  @override
-  double get minExtent => 60.0; // 최소 높이도 동일하게 설정
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return false;
-  }
-}
-

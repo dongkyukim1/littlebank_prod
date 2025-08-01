@@ -1,7 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+/// Pretendard 폰트 전 Weight 사용 예시
+/// AppTheme.pretendardThin, AppTheme.pretendardExtraLight, ..., AppTheme.pretendardBlack
 class AppTheme {
+  // Pretendard FontWeight별 TextStyle
+  static const TextStyle pretendardThin = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w100,
+  );
+  static const TextStyle pretendardExtraLight = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w200,
+  );
+  static const TextStyle pretendardLight = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w300,
+  );
+  static const TextStyle pretendardRegular = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w400,
+  );
+  static const TextStyle pretendardMedium = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w500,
+  );
+  static const TextStyle pretendardSemiBold = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w600,
+  );
+  static const TextStyle pretendardBold = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w700,
+  );
+  static const TextStyle pretendardExtraBold = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w800,
+  );
+  static const TextStyle pretendardBlack = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w900,
+  );
+
   // 색상 정의 (피그마 디자인에 맞게 조정)
   static const Color primaryColor = Color(0xFF4760FF); // 메인 블루 색상
   static const Color secondaryColor = Color(0xFFFF9F45); // 오렌지 색상
@@ -28,7 +67,7 @@ class AppTheme {
   static const TextStyle title2 = TextStyle(
     fontFamily: 'Pretendard',
     fontSize: 28,
-    fontWeight: FontWeight.w700, // Bold
+    fontWeight: FontWeight.w500, // Bold
     letterSpacing: -0.04 * 28, // -4%
     height: 1.3,
   );
@@ -150,6 +189,8 @@ class AppTheme {
 
   // 라이트 테마
   static final ThemeData lightTheme = ThemeData(
+    fontFamily: 'Pretendard', // Set Pretendard as the default font
+
     useMaterial3: true,
     colorScheme: const ColorScheme.light(
       primary: primaryColor,
@@ -163,30 +204,78 @@ class AppTheme {
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: backgroundColor,
-    fontFamily: 'Pretendard',
-    textTheme: const TextTheme(
-      displayLarge: title1,
-      displayMedium: title2,
-      displaySmall: title3,
-      headlineMedium: subTitle1,
-      headlineSmall: subTitle2,
-      titleLarge: subTitle3,
-      bodyLarge: body1,
-      bodyMedium: body4,
-      bodySmall: body6,
-      labelLarge: body4,
-      labelMedium: body6,
-      labelSmall: caption2,
+    textTheme: TextTheme(
+      displayLarge: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w900,
+      ), // Black
+      displayMedium: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w800,
+      ), // ExtraBold
+      displaySmall: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w700,
+      ), // Bold
+      headlineLarge: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w600,
+      ), // SemiBold
+      headlineMedium: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w500,
+      ), // Medium
+      headlineSmall: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w400,
+      ), // Regular
+      titleLarge: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w300,
+      ), // Light
+      titleMedium: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w200,
+      ), // ExtraLight
+      titleSmall: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w100,
+      ), // Thin
+      bodyLarge: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w400,
+      ),
+      bodyMedium: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w300,
+      ),
+      bodySmall: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w200,
+      ),
+      labelLarge: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w900,
+      ),
+      labelMedium: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w700,
+      ),
+      labelSmall: const TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w500,
+      ),
     ),
     appBarTheme: const AppBarTheme(
       elevation: 0,
-      backgroundColor: backgroundColor,
-      foregroundColor: textColor,
+      backgroundColor: Colors.white,
+      foregroundColor: Color(0xFF333333),
       centerTitle: true,
       titleTextStyle: TextStyle(
-        color: textColor,
+        color: Color(0xFF333333),
         fontSize: 18,
         fontWeight: FontWeight.bold,
+        fontFamily: 'Pretendard',
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -196,7 +285,11 @@ class AppTheme {
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        textStyle: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Pretendard',
+        ),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
@@ -255,10 +348,10 @@ class AppTheme {
       labelStyle: labelMedium,
       secondaryLabelStyle: const TextStyle(fontSize: 12, color: Colors.white),
     ),
-    cardTheme: CardTheme(
-      elevation: 2,
-      clipBehavior: Clip.antiAlias,
+    cardTheme: CardThemeData(
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      color: Colors.white,
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
@@ -279,12 +372,10 @@ class AppTheme {
       thickness: 1,
       space: 1,
     ),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: primaryColor,
       unselectedLabelColor: subtextColor,
-      indicator: BoxDecoration(
-        border: Border(bottom: BorderSide(color: primaryColor, width: 2)),
-      ),
+      indicatorColor: primaryColor,
     ),
   );
 
@@ -296,7 +387,7 @@ class AppTheme {
       primaryContainer: primaryColor,
       secondary: secondaryColor,
       secondaryContainer: secondaryColor,
-      surface: Colors.grey[900]!,
+      surface: const Color(0xFF212121),
       error: errorColor,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
@@ -304,7 +395,68 @@ class AppTheme {
       onError: Colors.white,
       brightness: Brightness.dark,
     ),
-    textTheme: GoogleFonts.robotoTextTheme(ThemeData.dark().textTheme),
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w900,
+      ), // Black
+      displayMedium: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w800,
+      ), // ExtraBold
+      displaySmall: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w700,
+      ), // Bold
+      headlineLarge: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w600,
+      ), // SemiBold
+      headlineMedium: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w500,
+      ), // Medium
+      headlineSmall: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w400,
+      ), // Regular
+      titleLarge: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w300,
+      ), // Light
+      titleMedium: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w200,
+      ), // ExtraLight
+      titleSmall: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w100,
+      ), // Thin
+      bodyLarge: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w400,
+      ),
+      bodyMedium: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w300,
+      ),
+      bodySmall: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w200,
+      ),
+      labelLarge: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w900,
+      ),
+      labelMedium: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w700,
+      ),
+      labelSmall: TextStyle(
+        fontFamily: 'Pretendard',
+        fontWeight: FontWeight.w500,
+      ),
+    ),
     appBarTheme: AppBarTheme(
       elevation: 0,
       backgroundColor: Colors.grey[900],
@@ -312,27 +464,28 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF333333),
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: secondaryColor,
+      backgroundColor: Color(0xFFFF9F45),
       foregroundColor: Colors.white,
       elevation: 6,
     ),
-    cardTheme: CardTheme(
-      elevation: 1,
-      color: Colors.grey[800],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+    cardTheme: const CardThemeData(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(10)),
+      ),
+      color: Colors.white,
     ),
     dividerTheme: const DividerThemeData(
       space: 1,
       thickness: 1,
-      color: Colors.white24,
+      color: Color(0xFFEEEEEE),
     ),
   );
 }

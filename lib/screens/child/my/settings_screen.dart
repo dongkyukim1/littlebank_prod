@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'delete_account_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,6 +14,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _updateNotification = false;
   bool _likeNotification = true;
   bool _commentNotification = true;
+  bool _doNotDisturbNotification = true;
 
   @override
   Widget build(BuildContext context) {
@@ -27,27 +29,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(
             color: Colors.black,
             fontSize: 16,
-            fontFamily: 'Pretendard',
-            fontWeight: FontWeight.w700,
+            fontFamily: 'Pretendard-Bold',
             letterSpacing: -0.32,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 16),
+          icon: Image.asset('assets/icons/my/뒤로가기.png', width: 20, height: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          IconButton(
-            icon: Image.asset(
-              'assets/icons/home.png',
-              width: 24,
-              height: 24,
-            ),
-            onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -55,7 +44,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             // 앱 알림 섹션
             _buildSectionHeader('앱 알림'),
-            
+
+            // 구분선
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFF333333),
+              indent: 16,
+              endIndent: 16,
+            ),
+
             // 공지사항 알림
             _buildNotificationItem(
               '공지사항 알림',
@@ -68,10 +66,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
               showTopBorder: true,
             ),
-            
+
             // 구분선
-            const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE)),
-            
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFF8490A3),
+              indent: 16,
+              endIndent: 16,
+            ),
+
+            // 방해금지 시간 설정
+            _buildNotificationItem(
+              '방해금지 시간 설정',
+              '다양한 정보를 빠르게 만나실 수 있습니다.',
+              _doNotDisturbNotification,
+              (value) {
+                setState(() {
+                  _doNotDisturbNotification = value;
+                });
+              },
+              showTopBorder: false,
+            ),
+
+            // 구분선
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFF8490A3),
+              indent: 16,
+              endIndent: 16,
+            ),
+
             // 업데이트 알림
             _buildNotificationItem(
               '업데이트 알림',
@@ -85,16 +111,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               showTopBorder: false,
             ),
 
-            // 구분선
-            _buildDivider(),
+            // 구분선 (테두리 없는 회색 배경)
+            Container(
+              width: double.infinity,
+              height: 12,
+              color: Color(0xFFEFF2F6),
+            ),
 
             // 활동 알림 섹션
             _buildSectionHeader('활동 알림'),
-            
+
+            // 구분선
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFF333333),
+              indent: 16,
+              endIndent: 16,
+            ),
+
             // 좋아요 알림
             _buildNotificationItem(
-              '작성글 반응 XXX',
-              '작성글에 좋아요가 달리면 알려드릴게요',
+              '작성글 반응 알림',
+              '작성글에 도움이 됐어요가 달리면 알려드릴게요',
               _likeNotification,
               (value) {
                 setState(() {
@@ -103,13 +142,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
               showTopBorder: true,
             ),
-            
+
             // 구분선
-            const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE)),
-            
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFF8490A3),
+              indent: 16,
+              endIndent: 16,
+            ),
+
             // 댓글 알림
             _buildNotificationItem(
-              '작성글 반응 XXX',
+              '댓글 알림',
               '작성글에 댓글이 달리면 알려드릴게요',
               _commentNotification,
               (value) {
@@ -120,39 +165,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
               showTopBorder: false,
             ),
 
-            // 구분선
-            _buildDivider(),
+            // 구분선 (테두리 없는 회색 배경)
+            Container(
+              width: double.infinity,
+              height: 12,
+              color: Color(0xFFEFF2F6),
+            ),
 
             // 앱 정보 섹션
             _buildSectionHeader('앱 정보'),
-            
-            // 앱 버전 정보
-            _buildInfoItem(
-              '앱 정보 v2. 21. 20',
-              '최신 업데이트 버전입니다.',
-            ),
-            
+
             // 구분선
-            const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE)),
-            
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFF333333),
+              indent: 16,
+              endIndent: 16,
+            ),
+
+            // 앱 버전 정보
+            _buildInfoItem('앱 정보 v2. 21. 20', '최신 업데이트 버전입니다.'),
+
+            // 구분선
+            const Divider(
+              height: 1,
+              thickness: 0.5,
+              color: Color(0xFF8490A3),
+              indent: 16,
+              endIndent: 16,
+            ),
+
             // 이용약관 및 개인정보
-            _buildLinkItem('이용약관 및 개인 정보'),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: InkWell(
+                onTap: () {
+                  // 이용약관 및 개인정보 화면으로 이동
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 20,
+                    horizontal: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.transparent),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '이용약관 및 개인 정보',
+                        style: const TextStyle(
+                          color: Color(0xFF202020),
+                          fontSize: 14,
+                          fontFamily: 'Pretendard-Bold',
+                          letterSpacing: -0.32,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: Color(0xFFCCCCCC),
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // 여백
+            Container(
+              width: double.infinity,
+              height: 12,
+              color: Color(0xFFEFF2F6),
+            ),
 
             // 회원 탈퇴 버튼
             Center(
               child: Padding(
-                padding: const EdgeInsets.only(top: 140, bottom: 40),
+                padding: const EdgeInsets.only(top: 40, bottom: 40),
                 child: GestureDetector(
                   onTap: () {
                     // 회원 탈퇴 기능 구현
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DeleteAccountScreen(),
+                      ),
+                    );
                   },
                   child: const Text(
                     '회원 탈퇴하기',
                     style: TextStyle(
                       color: Color(0xFFCCCCCC),
-                      fontSize: 14,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w300,
+                      fontSize: 12,
+                      fontFamily: 'Pretendard-Light',
                       letterSpacing: -0.28,
                       decoration: TextDecoration.underline,
                       decorationColor: Color(0xFFCCCCCC),
@@ -177,9 +289,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title,
         style: const TextStyle(
           color: Color(0xFF202020),
-          fontSize: 18,
-          fontFamily: 'Pretendard',
-          fontWeight: FontWeight.w700,
+          fontSize: 16,
+          fontFamily: 'Pretendard-Bold',
           letterSpacing: -0.72,
         ),
       ),
@@ -200,10 +311,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.transparent),
-        ),
+        decoration: BoxDecoration(color: Colors.white),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -216,9 +324,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title,
                     style: const TextStyle(
                       color: Color(0xFF202020),
-                      fontSize: 16,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      fontFamily: 'Pretendard-Bold',
                       letterSpacing: -0.32,
                     ),
                   ),
@@ -227,9 +334,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     description,
                     style: const TextStyle(
                       color: Color(0xFF666666),
-                      fontSize: 12,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w300,
+                      fontSize: 10,
+                      fontFamily: 'Pretendard-Light',
                       letterSpacing: -0.24,
                     ),
                   ),
@@ -251,10 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.transparent),
-        ),
+        decoration: BoxDecoration(color: Colors.white),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -262,9 +365,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title,
               style: const TextStyle(
                 color: Color(0xFF202020),
-                fontSize: 16,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                fontFamily: 'Pretendard-Bold',
                 letterSpacing: -0.32,
               ),
             ),
@@ -273,9 +375,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               description,
               style: const TextStyle(
                 color: Color(0xFF666666),
-                fontSize: 12,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w300,
+                fontSize: 10,
+                fontFamily: 'Pretendard-Light',
                 letterSpacing: -0.24,
               ),
             ),
@@ -309,9 +410,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title,
                 style: const TextStyle(
                   color: Color(0xFF202020),
-                  fontSize: 16,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  fontFamily: 'Pretendard-Bold',
                   letterSpacing: -0.32,
                 ),
               ),
@@ -329,7 +429,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // 토글 스위치 위젯
   Widget _buildToggleSwitch(bool value, Function(bool) onChanged) {
-    return Container(
+    return SizedBox(
       width: 60,
       height: 32,
       child: Stack(
@@ -348,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               onChanged(!value);
             },
-            child: Container(
+            child: SizedBox(
               width: 60,
               height: 32,
               child: AnimatedAlign(
@@ -370,7 +470,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           blurRadius: 3,
                           offset: Offset(3, 3),
                           spreadRadius: 0,
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -388,9 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       width: double.infinity,
       height: 12,
-      decoration: const BoxDecoration(
-        color: Color(0xFFEFF2F6),
-      ),
+      color: Color(0xFFEFF2F6),
     );
   }
-} 
+}

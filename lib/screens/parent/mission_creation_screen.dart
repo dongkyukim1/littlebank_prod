@@ -18,10 +18,10 @@ class MissionCreationScreen extends StatefulWidget {
 class _MissionCreationScreenState extends State<MissionCreationScreen> {
   // 선택된 미션 유형 (영어, 영어 단어, 영어 리스닝 등)
   final TextEditingController _missionController = TextEditingController();
+  // 용돈 금액 컨트롤러
+  final TextEditingController _allowanceController = TextEditingController();
   // 선택된 날짜 범위
   String _selectedDateRange = '2025년 4월 14일 (월) ~ 2025년 4월 21일 (월)';
-  // 용돈 금액
-  String _allowanceAmount = '16,000원';
   // 미션 설명
   String _missionDescription = '';
 
@@ -84,6 +84,9 @@ class _MissionCreationScreenState extends State<MissionCreationScreen> {
   @override
   void initState() {
     super.initState();
+    // 용돈 초기값 설정
+    _allowanceController.text = '10,000원';
+
     // 필드 변경 감지를 위한 리스너
     _missionController.addListener(() {
       setState(() {
@@ -97,6 +100,7 @@ class _MissionCreationScreenState extends State<MissionCreationScreen> {
   @override
   void dispose() {
     _missionController.dispose();
+    _allowanceController.dispose();
     super.dispose();
   }
 
@@ -650,8 +654,7 @@ class _MissionCreationScreenState extends State<MissionCreationScreen> {
                       style: TextStyle(
                         color: const Color(0xFF202020),
                         fontSize: 18,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Pretendard-Bold',
                         letterSpacing: -0.72,
                       ),
                     ),
@@ -669,7 +672,7 @@ class _MissionCreationScreenState extends State<MissionCreationScreen> {
                           side: BorderSide(
                             width: 1.40,
                             color:
-                                _allowanceAmount.isNotEmpty
+                                _allowanceController.text.isNotEmpty
                                     ? const Color(0xFF3A88F4) // 입력 있으면 파란색
                                     : const Color(0xFFDADADA), // 입력 없으면 회색
                           ),
@@ -705,23 +708,21 @@ class _MissionCreationScreenState extends State<MissionCreationScreen> {
                                 fontWeight: FontWeight.w300,
                                 letterSpacing: -0.28,
                               ),
-                              controller: TextEditingController(
-                                text: _allowanceAmount,
-                              ),
+                              controller: _allowanceController,
                               onChanged: (value) {
                                 setState(() {
-                                  _allowanceAmount = value;
+                                  // 상태 업데이트를 위한 setState 호출
                                 });
                               },
                               keyboardType: TextInputType.number,
                             ),
                           ),
                           // 삭제 버튼 추가
-                          _allowanceAmount.isNotEmpty
+                          _allowanceController.text.isNotEmpty
                               ? GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    _allowanceAmount = '';
+                                    _allowanceController.clear();
                                   });
                                 },
                                 child: Container(

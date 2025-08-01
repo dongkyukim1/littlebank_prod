@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/child/my/activity_history_screen.dart';
 
 class MissionProgressCard extends StatelessWidget {
   final String title; // 미션 제목
@@ -124,7 +125,14 @@ class MissionProgressCard extends StatelessWidget {
             const SizedBox(height: 32),
 
             // 하단 버튼
-            _buildActionButton('참여 중인 모든 미션 보러가기', onViewMore),
+            _buildActionButton('참여 중인 모든 미션 보러가기', () {
+              // 활동내역 화면의 미션 탭(인덱스 0)으로 이동
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ActivityHistoryScreen(initialTabIndex: 0),
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -242,7 +250,7 @@ class MissionProgressCard extends StatelessWidget {
   }
 
   // 액션 버튼
-  Widget _buildActionButton(String text, Function()? onTap) {
+  Widget _buildActionButton(String text, Function() onTap) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(

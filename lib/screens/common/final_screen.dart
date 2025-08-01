@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'profile_selection_screen.dart';
 import 'login_screen.dart';
+import '../../services/auth_service.dart';
+import 'modal/account_input_modal.dart';
 
 class FinalScreen extends StatefulWidget {
   final String userId;
@@ -9,6 +11,13 @@ class FinalScreen extends StatefulWidget {
   final String? password;
   final String? name;
   final String? phone;
+  final bool? agreedTermsOfService;
+  final bool? agreedPrivacyCollection;
+  final bool? agreedMinorGuardian;
+  final bool? agreedElectronicFinance;
+  final bool? agreedRewardGuardian;
+  final bool? agreedThirdPartySharing;
+  final bool? agreedDataProcessingDelegation;
 
   const FinalScreen({
     super.key,
@@ -18,6 +27,13 @@ class FinalScreen extends StatefulWidget {
     this.password,
     this.name,
     this.phone,
+    this.agreedTermsOfService,
+    this.agreedPrivacyCollection,
+    this.agreedMinorGuardian,
+    this.agreedElectronicFinance,
+    this.agreedRewardGuardian,
+    this.agreedThirdPartySharing,
+    this.agreedDataProcessingDelegation,
   });
 
   @override
@@ -38,51 +54,63 @@ class _FinalScreenState extends State<FinalScreen> {
 
   // 은행 목록 관리
   final List<Map<String, dynamic>> _allBanks = [
-    {'name': '카카오뱅크', 'image': 'assets/logos/kakao_bank.png'},
     {'name': 'KB국민', 'image': 'assets/logos/kb_bank.png'},
-    {'name': '씨티은행', 'image': 'assets/logos/citi_bank.png'},
     {'name': '신한', 'image': 'assets/logos/shinhan_bank.png'},
-    {'name': '우리', 'image': 'assets/logos/woori_bank.png'},
-    {'name': '하나', 'image': 'assets/logos/hana_bank.png'},
-    {'name': '토스뱅크', 'image': 'assets/logos/toss.png'},
     {'name': '농협', 'image': 'assets/logos/nh_bank.png'},
-    {'name': 'IBK기업', 'image': 'assets/logos/ibk_bank.png'},
-    {'name': 'SC제일', 'image': 'assets/logos/sc_bank.png'},
+    {'name': '하나', 'image': 'assets/logos/hana_bank.png'},
+    {'name': '우리', 'image': 'assets/logos/woori_bank.png'},
+    {'name': '카카오뱅크', 'image': 'assets/logos/kakao_bank.png'},
     {'name': '부산', 'image': 'assets/logos/busan_bank.png'},
-    {'name': '대구', 'image': 'assets/logos/daegu_bank.png'},
+    {'name': '토스뱅크', 'image': 'assets/logos/toss.png'},
+    {'name': 'IBK기업', 'image': 'assets/logos/ibk_bank.png'},
     {'name': '경남', 'image': 'assets/logos/kyongnam_bank.png'},
-    {'name': '수협', 'image': 'assets/logos/suhyup_bank.png'},
-    {'name': '광주', 'image': 'assets/logos/gwangju_bank.png'},
     {'name': '전북', 'image': 'assets/logos/jeonbuk_bank.png'},
+    {'name': '수협', 'image': 'assets/logos/suhyup_bank.png'},
     {'name': '제주', 'image': 'assets/logos/jeju_bank.png'},
-    {'name': '케이뱅크', 'image': 'assets/logos/kbank.png'},
-    {'name': '새마을금고', 'image': 'assets/logos/saemaul.png'},
+    {'name': '대구', 'image': 'assets/logos/daegu_bank.png'},
+    {'name': '광주', 'image': 'assets/logos/gwangju_bank.png'},
+    {'name': 'SC제일', 'image': 'assets/logos/sc_bank.png'},
+    {'name': '씨티은행', 'image': 'assets/logos/citi_bank.png'},
+    {'name': '케이뱅크', 'image': 'assets/logos/k_bank.png'},
     {'name': '신협', 'image': 'assets/logos/shinhyup.png'},
+    {'name': '우체국', 'image': 'assets/logos/우체국_bank.png'},
+    {'name': '축협', 'image': 'assets/logos/축협_bank.png'},
   ];
 
   // 증권사 목록 관리
   final List<Map<String, dynamic>> _allSecurities = [
-    {'name': '키움증권', 'image': 'assets/logos/kiwoom.png'},
-    {'name': '미래에셋증권', 'image': 'assets/logos/mirae_asset.png'},
-    {'name': '삼성증권', 'image': 'assets/logos/samsung_securities.png'},
-    {'name': 'NH투자증권', 'image': 'assets/logos/nh_investment.png'},
-    {'name': '한국투자증권', 'image': 'assets/logos/korea_investment.png'},
-    {'name': 'KB증권', 'image': 'assets/logos/kb_securities.png'},
-    {'name': '신한투자증권', 'image': 'assets/logos/shinhan_investment.png'},
-    {'name': '대신증권', 'image': 'assets/logos/daishin.png'},
-    {'name': '카카오페이증권', 'image': 'assets/logos/kakaopay_securities.png'},
-    {'name': '토스증권', 'image': 'assets/logos/toss_securities.png'},
+    {'name': '키움', 'image': 'assets/logos/kiwoom.png'},
+    {'name': '미래에셋', 'image': 'assets/logos/mirae_asset.png'},
+    {'name': '삼성', 'image': 'assets/logos/samsung_securities.png'},
+    {'name': 'NH투자', 'image': 'assets/logos/nh_investment.png'},
+    {'name': '한국투자', 'image': 'assets/logos/korea_investment.png'},
+    {'name': 'KB', 'image': 'assets/logos/kb_securities.png'},
+    {'name': '신한투자', 'image': 'assets/logos/shinhan_investment.png'},
+    {'name': '나무', 'image': 'assets/logos/namoo.jpg'},
+    {'name': '토스', 'image': 'assets/logos/toss_securities.png'},
   ];
 
   // 선택된 금융기관 정보
   String _selectedFinancialInstitutionImage = 'assets/logos/kakao_bank.png';
-  String _selectedBankName = '카카오뱅크';
+  String _selectedBankName = '';
 
   // 계좌번호 입력 관련
   final TextEditingController _accountNumberController =
       TextEditingController();
   bool _isAccountNumberEntered = false;
   bool _isAccountRegistrationComplete = false;
+
+  // 계좌검증 관련 추가
+  final TextEditingController _accountHolderController =
+      TextEditingController();
+  bool _isAccountVerified = false;
+  bool _isVerifying = false;
+  String? _verificationMessage;
+
+  // PIN 번호 입력 관련 추가
+  final TextEditingController _pinController = TextEditingController();
+  bool _isPinEntered = false;
+  String _enteredPin = '';
 
   @override
   void initState() {
@@ -96,6 +124,8 @@ class _FinalScreenState extends State<FinalScreen> {
     _searchController.removeListener(_updateSearchQuery);
     _searchController.dispose();
     _accountNumberController.dispose();
+    _accountHolderController.dispose();
+    _pinController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -168,64 +198,79 @@ class _FinalScreenState extends State<FinalScreen> {
 
   void _selectFinancialInstitution(Map<String, dynamic> institution) {
     setState(() {
-      _selectedFinancialInstitutionImage = institution['image'];
-      _selectedBankName = institution['name'];
+      // 이미 선택된 은행을 다시 누르면 선택 해제
+      if (_selectedBankName == institution['name']) {
+        _selectedBankName = '';
+        _selectedFinancialInstitutionImage = '';
+      } else {
+        _selectedFinancialInstitutionImage = institution['image'];
+        _selectedBankName = institution['name'];
+        // 계좌 정보 입력 모달 표시
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder:
+              (context) => AccountInputModal(
+                institution: institution,
+                getBankCode: _getBankCode,
+                userId: widget.userId,
+                jumin: widget.jumin,
+                password: widget.password,
+                name: widget.name,
+                phone: widget.phone,
+                marketingAgreed: widget.marketingAgreed,
+                agreedTermsOfService: widget.agreedTermsOfService,
+                agreedPrivacyCollection: widget.agreedPrivacyCollection,
+                agreedMinorGuardian: widget.agreedMinorGuardian,
+                agreedElectronicFinance: widget.agreedElectronicFinance,
+                agreedRewardGuardian: widget.agreedRewardGuardian,
+                agreedThirdPartySharing: widget.agreedThirdPartySharing,
+                agreedDataProcessingDelegation: widget.agreedDataProcessingDelegation,
+              ),
+        );
+      }
       _searchController.clear();
       _searchQuery = '';
     });
-
-    // 금융기관 선택 시 바로 계좌번호 입력 화면을 띄움
-    _showAccountNumberInputSheet();
   }
 
   // 검색창 영역
   Widget _buildSearchBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20.0),
-      decoration: BoxDecoration(
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: ShapeDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 6,
-            spreadRadius: 1.5,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
       ),
       child: Row(
         children: [
+          Container(
+            width: 24,
+            height: 24,
+            child: Icon(Icons.search, color: Colors.grey[400], size: 20),
+          ),
           const SizedBox(width: 12),
-          Icon(Icons.search, color: Colors.grey[400], size: 20),
-          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: '찾으시는 은행/증권사를 검색하세요',
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                hintText: '연결하고 싶은 은행을 검색해 주세요',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF999999),
+                  fontSize: 12,
+                  fontFamily: 'Pretendard-Light',
+                  letterSpacing: -0.24,
+                ),
                 filled: false,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 6),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
                 isDense: true,
               ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0047AB),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.search, color: Colors.white, size: 20),
-              onPressed: () {
-                // 검색 기능 구현
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
           ),
         ],
@@ -233,9 +278,11 @@ class _FinalScreenState extends State<FinalScreen> {
     );
   }
 
-  // 은행 그리드 뷰 (이미지와 일치하는 디자인)
+  // 은행 그리드 뷰 (3x3 형태)
   Widget _buildBankGridView() {
     final filteredList = _getFilteredFinancialInstitutions();
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     if (filteredList.isEmpty) {
       return const Center(
@@ -243,749 +290,584 @@ class _FinalScreenState extends State<FinalScreen> {
       );
     }
 
+    // 9개씩 보이도록 (3행 3열)
     final pageCount = (filteredList.length / 9).ceil();
 
-    return Column(
-      children: [
-        // 그리드 뷰 (페이지 슬라이드 방식)
-        Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            scrollDirection: Axis.vertical,
-            itemCount: pageCount,
-            onPageChanged: (page) {
-              setState(() {
-                _currentPage = page;
-              });
-            },
-            itemBuilder: (context, pageIndex) {
-              final startIndex = pageIndex * 9;
-              final endIndex =
-                  (startIndex + 9) < filteredList.length
-                      ? startIndex + 9
-                      : filteredList.length;
+    // 적절한 높이 계산 (화면 크기에 따라 동적 조정)
+    double gridHeight = screenHeight * 0.35; // 화면 높이의 35%
+    if (gridHeight < 300) gridHeight = 300; // 최소 높이
+    if (gridHeight > 400) gridHeight = 400; // 최대 높이
 
-              // 현재 페이지에 표시할 아이템 목록
-              final pageItems = filteredList.sublist(startIndex, endIndex);
+    return SizedBox(
+      height: gridHeight,
+      child: PageView.builder(
+        controller: _pageController,
+        scrollDirection: Axis.vertical,
+        itemCount: pageCount,
+        onPageChanged: (page) {
+          setState(() {
+            _currentPage = page;
+          });
+        },
+        itemBuilder: (context, pageIndex) {
+          final startIndex = pageIndex * 9;
+          final endIndex =
+              (startIndex + 9) < filteredList.length
+                  ? startIndex + 9
+                  : filteredList.length;
 
-              // 9개가 되도록 빈 항목 추가 (3x3 그리드를 채우기 위함)
-              while (pageItems.length < 9) {
-                pageItems.add({'name': '', 'image': ''});
-              }
+          final pageItems = filteredList.sublist(startIndex, endIndex);
 
-              return Column(
-                children: [
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.01),
+            child: Column(
+              children: [
+                for (int row = 0; row < 3; row++)
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          // 레이아웃 제약 조건을 기반으로 계산
-                          final availableWidth = constraints.maxWidth;
-                          final itemWidth =
-                              (availableWidth - 24) / 3; // 3열에 간격 고려
-
-                          return Wrap(
-                            spacing: 12, // 가로 간격
-                            runSpacing: 12, // 세로 간격
-                            children: List.generate(9, (index) {
-                              final institution = pageItems[index];
-
-                              // 빈 항목인 경우 빈 공간 반환
-                              if (institution['name'] == '') {
-                                return SizedBox(
-                                  width: itemWidth,
-                                  height: itemWidth,
-                                );
-                              }
-
-                              bool isSelected =
-                                  institution['name'] == _selectedBankName;
-
-                              return GestureDetector(
-                                onTap:
-                                    () => _selectFinancialInstitution(
-                                      institution,
-                                    ),
-                                child: SizedBox(
-                                  width: itemWidth,
-                                  height: itemWidth,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 45,
-                                        height: 45,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.white,
-                                            border: Border.all(
-                                              color:
-                                                  isSelected
-                                                      ? const Color(0xFF0047AB)
-                                                      : Colors.white,
-                                              width: isSelected ? 2.0 : 0,
-                                            ),
-                                            boxShadow:
-                                                isSelected
-                                                    ? [
-                                                      BoxShadow(
-                                                        color: const Color(
-                                                          0xFF0047AB,
-                                                        ).withOpacity(0.3),
-                                                        blurRadius: 4,
-                                                        spreadRadius: 0,
-                                                        offset: const Offset(
-                                                          0,
-                                                          1,
-                                                        ),
-                                                      ),
-                                                    ]
-                                                    : [
-                                                      BoxShadow(
-                                                        color: Colors.black.withOpacity(0.1),
-                                                        blurRadius: 6,
-                                                        spreadRadius: 1.5,
-                                                        offset: const Offset(0, 3),
-                                                      ),
-                                                    ],
-                                          ),
-                                          padding: const EdgeInsets.all(8),
-                                          child: Image.asset(
-                                            institution['image'],
-                                            fit: BoxFit.contain,
-                                            errorBuilder: (
-                                              context,
-                                              error,
-                                              stackTrace,
-                                            ) {
-                                              return const Icon(
-                                                Icons.account_balance,
-                                                size: 16,
-                                                color: Colors.grey,
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Flexible(
-                                        child: Text(
-                                          institution['name'],
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight:
-                                                isSelected
-                                                    ? FontWeight.bold
-                                                    : FontWeight.w500,
-                                            color:
-                                                isSelected
-                                                    ? const Color(0xFF0047AB)
-                                                    : Colors.black,
-                                            height: 1.0,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }),
-                          );
-                        },
+                      padding: const EdgeInsets.symmetric(vertical: 0.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          for (int col = 0; col < 3; col++)
+                            Expanded(
+                              child: Center(
+                                child:
+                                    pageItems.length > (row * 3 + col)
+                                        ? _buildBankItem(
+                                          pageItems[row * 3 + col],
+                                        )
+                                        : const SizedBox(width: 100),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              );
-            },
-          ),
-        ),
-
-        // 페이지 인디케이터 (작게 표시)
-        if (pageCount > 1)
-          Container(
-            height: 6,
-            margin: const EdgeInsets.only(bottom: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                pageCount,
-                (index) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: _currentPage == index ? 24 : 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(3),
-                    color:
-                        _currentPage == index
-                            ? const Color(0xFF0047AB)
-                            : Colors.grey[300],
-                  ),
-                ),
-              ),
+              ],
             ),
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 
-  // 계좌번호 입력 시트를 표시하는 메소드
-  void _showAccountNumberInputSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
+  Widget _buildBankItem(Map<String, dynamic>? institution) {
+    if (institution == null) {
+      return const SizedBox();
+    }
+
+    bool isSelected = institution['name'] == _selectedBankName;
+
+    return GestureDetector(
+      onTap: () => _selectFinancialInstitution(institution),
+      child: Container(
+        width: 100,
+        margin: const EdgeInsets.all(2.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        decoration: ShapeDecoration(
+          color: isSelected ? const Color(0xFF146AFF) : const Color(0xFFE4ECF8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 상단 헤더
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        child: Stack(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration:
+                      _selectedTabIndex == 0
+                          ? const ShapeDecoration(shape: OvalBorder())
+                          : null,
+                  child:
+                      _selectedTabIndex == 0
+                          ? ClipOval(
+                            child: Image.asset(
+                              institution['image'],
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.account_balance,
+                                    size: 18,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                          : Image.asset(
+                            institution['image'],
+                            width: 36,
+                            height: 36,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 36,
+                                height: 36,
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.business,
+                                  size: 18,
+                                  color: Colors.grey,
+                                ),
+                              );
+                            },
+                          ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 84,
+                  alignment: Alignment.center,
+                  child: Text(
+                    institution['name'],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color:
+                          isSelected ? Colors.white : const Color(0xFF202020),
+                      fontSize: 10,
+                      fontFamily: 'Pretendard-Light',
+                      letterSpacing: -0.24,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            // 선택 시 가운데 체크 아이콘
+            if (isSelected)
+              Positioned.fill(
+                child: Center(
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: const ShapeDecoration(
+                      color: Color(0xFF5D9EFF),
+                      shape: OvalBorder(),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 계좌 등록 초기화 메서드
+  void _resetAccountRegistration() {
+    setState(() {
+      _isAccountNumberEntered = false;
+      _isAccountRegistrationComplete = false;
+      _isAccountVerified = false;
+      _isPinEntered = false;
+      _enteredPin = '';
+      _verificationMessage = null;
+    });
+    _accountNumberController.clear();
+    _accountHolderController.clear();
+    _pinController.clear();
+  }
+
+  // PIN 설정 완료
+  void _completePinSetup() {
+    setState(() {
+      _isPinEntered = true;
+      _isAccountRegistrationComplete = true;
+    });
+  }
+
+  // PIN 설정 건너뛰기
+  void _skipPinSetup() {
+    setState(() {
+      _isPinEntered = false;
+      _enteredPin = '';
+      _pinController.clear();
+      _isAccountRegistrationComplete = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F7F7),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 상단 앱바
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+              child: Container(
+                width: double.infinity,
+                height: 56,
+                child: Stack(
                   children: [
-                    Text(
-                      '$_selectedBankName 계좌번호를 입력해주세요',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
+                    Positioned(
+                      left: 0,
+                      top: 16,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          child: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 19,
+                      child: Center(
+                        child: Text(
+                          '계좌 연결',
+                          style: TextStyle(
+                            color: const Color(0xFF202020),
+                            fontSize: 16,
+                            fontFamily: 'Pretendard-Bold',
+                            letterSpacing: -0.32,
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // 계좌번호 입력 필드
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: TextField(
-                    controller: _accountNumberController,
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '숫자만 입력해주세요',
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                      filled: false,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                      border: InputBorder.none,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // 완료 버튼
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _enterAccountNumber();
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[500],
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text(
-                      '완료',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _enterAccountNumber() {
-    if (_accountNumberController.text.isNotEmpty) {
-      setState(() {
-        _isAccountNumberEntered = true;
-        _isAccountRegistrationComplete = true;
-      });
-    }
-  }
-
-  void _completeRegistration() {
-    // 계좌 정보 등록 완료 후 프로필 선택 화면으로 이동
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => ProfileSelectionScreen(
-              userId: widget.userId,
-              jumin: widget.jumin,
-              password: widget.password,
-              name: widget.name,
-              phone: widget.phone,
-              marketingAgreed: widget.marketingAgreed,
             ),
-      ),
-    );
-  }
 
-  // 수정 버튼 클릭 시 계좌 등록 완료 상태 초기화
-  void _resetAccountRegistration() {
-    setState(() {
-      _isAccountNumberEntered = false;
-      _isAccountRegistrationComplete = false;
-      _accountNumberController.clear();
-    });
-  }
+            const SizedBox(height: 20),
 
-  // 계좌 등록 완료 버튼 클릭 시 호출되는 메서드
-  void _completeAccountRegistration() {
-    setState(() {
-      _isAccountRegistrationComplete = true;
-    });
-
-    // 회원가입 완료 다이얼로그 표시
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            '회원가입 완료',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFF4F78FF),
-                size: 60,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '회원가입이 성공적으로 완료되었습니다!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '가입하신 계정(${widget.userId})으로\n로그인해주세요.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F78FF),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop(); // 다이얼로그 닫기
-                  // 로그인 화면으로 이동
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false, // 모든 이전 화면 제거
-                  );
-                },
-                child: const Text('로그인 화면으로 이동'),
-              ),
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-          actionsPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        );
-      },
-    );
-  }
-
-  // 계좌등록 건너뛰기 버튼 클릭 시 호출되는 메서드
-  void _skipAccountRegistration() {
-    // 회원가입 완료 다이얼로그 표시
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text(
-            '회원가입 완료',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFF4F78FF),
-                size: 60,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '회원가입이 성공적으로 완료되었습니다!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '가입하신 계정(${widget.userId})으로\n로그인해주세요.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F78FF),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop(); // 다이얼로그 닫기
-                  // 로그인 화면으로 이동
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false, // 모든 이전 화면 제거
-                  );
-                },
-                child: const Text('로그인 화면으로 이동'),
-              ),
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-          actionsPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80), // 앱바 높이 증가
-        child: AppBar(
-          elevation: 0,
-          backgroundColor: const Color(0xFFF8F9FA),
-          automaticallyImplyLeading: false,
-          flexibleSpace: SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end, // 하단 정렬
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10.0),
-                  child: Row(
+            // 스크롤 가능한 콘텐츠
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios,
-                            color: Colors.black,
-                            size: 20,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ),
-                      Expanded(
+                      // 스텝 인디케이터
+                      Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.blue,
+                              width: 28,
+                              height: 28,
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFF3A88F4),
+                                shape: OvalBorder(),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '1',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Pretendard-Bold',
+                                  ),
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.blue,
+                              width: 12,
+                              height: 2,
+                              color: const Color(0xFFE4ECF8),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFF3A88F4),
+                                shape: OvalBorder(),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '2',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Pretendard-Bold',
+                                  ),
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             Container(
-                              width: 80,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4),
-                                color: Colors.blue,
+                              width: 12,
+                              height: 2,
+                              color: const Color(0xFFE4ECF8),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFF3A88F4),
+                                shape: OvalBorder(),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '3',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Pretendard-Bold',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 12,
+                              height: 2,
+                              color: const Color(0xFFE4ECF8),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFF3A88F4),
+                                shape: OvalBorder(),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '4',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Pretendard-Bold',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 12,
+                              height: 2,
+                              color: const Color(0xFFE4ECF8),
+                            ),
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: ShapeDecoration(
+                                color: const Color(0xFFE4ECF8),
+                                shape: OvalBorder(),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '5',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Pretendard-Bold',
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 48),
+
+                      const SizedBox(height: 20),
+
+                      // 타이틀 영역
+                      Container(
+                        width: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '계좌를 연결하면\n더 많은 서비스를 이용할 수 있어요',
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                color: Color(0xFF202020),
+                                fontSize: 20,
+                                fontFamily: 'Pretendard-Bold',
+                                height: 1.50,
+                                letterSpacing: -0.88,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '출금 시 예금주 명과 회원 정보의 이름이 동일해야 하기 때문에본인 명의의 계좌 연동만 가능해요. (선택사항)',
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                color: Color(0xFF8490A3),
+                                fontSize: 10,
+                                fontFamily: 'Pretendard-Light',
+                                letterSpacing: -0.28,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // 계좌/증권 탭 영역
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedTabIndex = 0;
+                                  _pageController.jumpToPage(0);
+                                  _currentPage = 0;
+                                });
+                              },
+                              child: Container(
+                                width: 89,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                decoration: ShapeDecoration(
+                                  color:
+                                      _selectedTabIndex == 0
+                                          ? const Color(0xFF3A88F4)
+                                          : const Color(0xFFE7ECF6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: Text(
+                                  '계좌',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color:
+                                        _selectedTabIndex == 0
+                                            ? Colors.white
+                                            : const Color(0xFF5D9EFF),
+                                    fontSize: 12,
+                                    fontFamily:
+                                        _selectedTabIndex == 0
+                                            ? 'Pretendard-Medium'
+                                            : 'Pretendard-Light',
+                                    letterSpacing: -0.24,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 26),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedTabIndex = 1;
+                                  _pageController.jumpToPage(0);
+                                  _currentPage = 0;
+                                });
+                              },
+                              child: Container(
+                                width: 89,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                decoration: ShapeDecoration(
+                                  color:
+                                      _selectedTabIndex == 1
+                                          ? const Color(0xFF3A88F4)
+                                          : const Color(0xFFE7ECF6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: Text(
+                                  '증권',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color:
+                                        _selectedTabIndex == 1
+                                            ? Colors.white
+                                            : const Color(0xFF5D9EFF),
+                                    fontSize: 12,
+                                    fontFamily:
+                                        _selectedTabIndex == 1
+                                            ? 'Pretendard-Medium'
+                                            : 'Pretendard-Light',
+                                    letterSpacing: -0.24,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // 검색창 영역
+                      _buildSearchBar(),
+
+                      const SizedBox(height: 24),
+
+                      // 은행 선택 그리드
+                      _buildBankGridView(),
+
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 타이틀 영역
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '계좌 연결 시 리틀뱅크의\n더 많은 서비스를 이용할 수 있어요',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
               ),
             ),
 
-            // 계좌/증권 탭 영역
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedTabIndex = 0;
-                          _pageController.jumpToPage(0); // 페이지 리셋
-                          _currentPage = 0; // 현재 페이지도 리셋
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _selectedTabIndex == 0
-                                ? const Color(0xFF0047AB)
-                                : Colors.grey[200],
-                        foregroundColor:
-                            _selectedTabIndex == 0
-                                ? Colors.white
-                                : Colors.black,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        '계좌',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedTabIndex = 1;
-                          _pageController.jumpToPage(0); // 페이지 리셋
-                          _currentPage = 0; // 현재 페이지도 리셋
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _selectedTabIndex == 1
-                                ? const Color(0xFF0047AB)
-                                : Colors.grey[200],
-                        foregroundColor:
-                            _selectedTabIndex == 1
-                                ? Colors.white
-                                : Colors.black,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        '증권',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+            // 하단 버튼 영역
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(
+                screenWidth * 0.04,
+                12,
+                screenWidth * 0.04,
+                12 + bottomPadding,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 8,
+                    offset: Offset(0, -4),
+                    spreadRadius: 0,
                   ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 검색창 영역
-            _buildSearchBar(),
-
-            const SizedBox(height: 16),
-
-            // 은행 선택 그리드 (이미지와 일치하도록 조정)
-            Expanded(
-              child:
-                  _isAccountNumberEntered
-                      ? _buildSelectedAccountInfo()
-                      : Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 6,
-                                spreadRadius: 1.5,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: _buildBankGridView(),
-                        ),
-                      ),
-            ),
-
-            // 하단 버튼
-            Padding(
-              padding: const EdgeInsets.all(20.0),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
                     width: double.infinity,
-                    height: 56,
+                    height: 52,
                     child: ElevatedButton(
-                      onPressed:
-                          _isAccountRegistrationComplete
-                              ? _completeAccountRegistration
-                              : null, // 계좌 등록 완료 시에만 활성화
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _isAccountRegistrationComplete
-                                ? const Color(0xFF0047AB)
-                                : Colors.grey[300],
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        '다음',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: TextButton(
                       onPressed: () {
-                        // 계좌 연결 없이 바로 프로필 선택 화면으로 이동
+                        // 프로필 선택 화면으로 이동 (계좌 정보 없이)
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -997,150 +879,49 @@ class _FinalScreenState extends State<FinalScreen> {
                                   name: widget.name,
                                   phone: widget.phone,
                                   marketingAgreed: widget.marketingAgreed,
+                                  // 계좌 정보는 전달하지 않음 (나중에 연결하기)
+                                  bankName: null,
+                                  bankCode: null,
+                                  bankAccount: null,
+                                  accountPin: null,
                                 ),
                           ),
                         );
                       },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey[700],
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF146AFF),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(color: Colors.grey[300]!),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
                       ),
-                      child: const Text(
-                        '나중에 하기',
+                      child: Text(
+                        '다음에 연결하기',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          fontFamily: 'Pretendard-Light',
+                          letterSpacing: -0.24,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 선택된 금융기관과 계좌번호 정보를 표시하는 위젯
-  Widget _buildSelectedAccountInfo() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 6,
-                    spreadRadius: 1.5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      border: Border.all(color: Colors.blue, width: 2.0),
-                    ),
-                    padding: const EdgeInsets.all(10),
-                    child: Image.asset(
-                      _selectedFinancialInstitutionImage,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _selectedBankName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF333333),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _formatAccountNumber(_accountNumberController.text),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      _resetAccountRegistration(); // 수정 버튼 클릭 시 초기화 메서드 호출
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            size: 16,
-                            color: Colors.amber[800],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '수정',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.amber[800],
-                            ),
-                          ),
-                        ],
-                      ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '지금 하지않아도 마이페이지에서 연결할 수 있어요',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: const Color(0xFF8490A3),
+                      fontSize: 10,
+                      fontFamily: 'Pretendard-Light',
+                      letterSpacing: -0.24,
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              child: Text(
-                '계좌 등록이 완료되었습니다.\n하단의 다음 버튼을 눌러 프로필 선택으로 진행해주세요.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
               ),
             ),
           ],
@@ -1151,7 +932,6 @@ class _FinalScreenState extends State<FinalScreen> {
 
   // 계좌번호 형식화 (예: 1234-56-7890)
   String _formatAccountNumber(String accountNumber) {
-    // 간단한 예시
     if (accountNumber.length <= 4) return accountNumber;
 
     final middle =
@@ -1162,5 +942,33 @@ class _FinalScreenState extends State<FinalScreen> {
     final last = accountNumber.length > 6 ? accountNumber.substring(6) : '';
 
     return '${accountNumber.substring(0, 4)}-$middle${last.isNotEmpty ? '-$last' : ''}';
+  }
+
+  // 은행 코드 매핑 함수
+  String _getBankCode(String bankName) {
+    final Map<String, String> bankCodes = {
+      'KB국민': '004',
+      '신한': '088',
+      '농협': '011',
+      '하나': '081',
+      '우리': '020',
+      '카카오뱅크': '090',
+      '부산': '032',
+      '토스뱅크': '092',
+      'IBK기업': '003',
+      '경남': '039',
+      '전북': '037',
+      '수협': '007',
+      '제주': '035',
+      '대구': '031',
+      '광주': '034',
+      'SC제일': '023',
+      '씨티은행': '027',
+      '케이뱅크': '089',
+      '신협': '048',
+      '우체국': '071',
+      '축협': '012',
+    };
+    return bankCodes[bankName] ?? '004';
   }
 }

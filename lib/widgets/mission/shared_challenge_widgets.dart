@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../screens/child/challenge_detail_screen.dart';
+import '../../screens/child/challenge/challenge_detail_screen.dart';
 
 /// 홈화면과 미션화면에서 공유하는 챌린지 관련 위젯들
 class SharedChallengeWidgets {
@@ -147,11 +147,17 @@ class SharedChallengeWidgets {
                           MaterialPageRoute(
                             builder:
                                 (context) => ChallengeDetailScreen(
+                                  id: 0,
                                   type: type,
                                   title: title,
                                   participants: participants,
                                   period: period,
                                   time: time,
+                                  startDate: '',
+                                  endDate: '',
+                                  startTime: '',
+                                  totalStudyTime: 0,
+                                  reward: 0,
                                 ),
                           ),
                         );
@@ -350,12 +356,18 @@ class SharedChallengeWidgets {
                                   MaterialPageRoute(
                                     builder:
                                         (context) => ChallengeDetailScreen(
+                                          id: challenge['id'] ?? 0,
                                           type: challenge['periodType'],
                                           title: challenge['title'],
                                           participants:
                                               challenge['participants'],
                                           period: challenge['period'],
                                           time: challenge['time'],
+                                          startDate: challenge['startDate'],
+                                          endDate: challenge['endDate'],
+                                          startTime: challenge['startTime'],
+                                          totalStudyTime: challenge['totalStudyTime'],
+                                          reward: challenge['reward'],
                                         ),
                                   ),
                                 );
@@ -603,11 +615,17 @@ class SharedChallengeWidgets {
                           MaterialPageRoute(
                             builder:
                                 (context) => ChallengeDetailScreen(
+                                  id: 0,
                                   type: type,
                                   title: title,
                                   participants: participants,
                                   period: period,
                                   time: time,
+                                  startDate: '',
+                                  endDate: '',
+                                  startTime: '',
+                                  totalStudyTime: 0,
+                                  reward: 0,
                                 ),
                           ),
                         );

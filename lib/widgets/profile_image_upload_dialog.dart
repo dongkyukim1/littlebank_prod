@@ -5,9 +5,23 @@ import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 
 class ProfileImageUploadDialog extends StatefulWidget {
-  final Function onCompleted;
+  final Function(File?)? onImageSelected;
 
-  const ProfileImageUploadDialog({super.key, required this.onCompleted});
+  const ProfileImageUploadDialog({super.key, this.onImageSelected});
+
+  static Future<File?> show(BuildContext context) {
+    return showDialog<File?>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return ProfileImageUploadDialog(
+          onImageSelected: (File? image) {
+            Navigator.of(context).pop(image);
+          },
+        );
+      },
+    );
+  }
 
   @override
   State<ProfileImageUploadDialog> createState() =>
@@ -15,241 +29,362 @@ class ProfileImageUploadDialog extends StatefulWidget {
 }
 
 class _ProfileImageUploadDialogState extends State<ProfileImageUploadDialog> {
+  final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
   bool _isUploading = false;
   String? _errorMessage;
+  int? _selectedOption; // 0: 카메라, 1: 갤러리, 2: 기본 프로필
 
-  // 이미지 선택 메서드
   Future<void> _selectImage(ImageSource source) async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? pickedImage = await picker.pickImage(
+      setState(() {
+        _isUploading = true;
+        _errorMessage = null;
+      });
+
+      final XFile? pickedFile = await _picker.pickImage(
         source: source,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
       );
 
-      if (pickedImage != null) {
+      if (pickedFile != null) {
         setState(() {
-          _selectedImage = File(pickedImage.path);
-          _errorMessage = null;
+          _selectedImage = File(pickedFile.path);
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = '이미지를 선택하는 중 오류가 발생했습니다: $e';
+        _errorMessage = '이미지를 선택할 수 없습니다. 다시 시도해 주세요.';
       });
-      print('이미지 선택 오류: $e');
-    }
-  }
-
-  // 이미지 소스 선택 옵션 표시
-  void _showImageSourceOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder:
-          (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_camera),
-                  title: const Text('카메라로 촬영하기'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _selectImage(ImageSource.camera);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('갤러리에서 선택하기'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _selectImage(ImageSource.gallery);
-                  },
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  // 이미지 업로드 처리
-  Future<void> _uploadImage() async {
-    if (_selectedImage == null) {
+    } finally {
       setState(() {
-        _errorMessage = '이미지를 먼저 선택해주세요';
+        _isUploading = false;
       });
-      return;
-    }
-
-    setState(() {
-      _isUploading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      // 이미지 업로드 API 호출
-      final imagePath = await AuthService.uploadProfileImage(_selectedImage!);
-
-      // 서버에 프로필 이미지 경로 업데이트
-      await AuthService.updateUserProfile(imagePath);
-
-      // 첫 로그인 상태 변경
-      await AuthService.setFirstLoginCompleted();
-
-      if (mounted) {
-        // 업로드 성공 시 다이얼로그 닫기
-        Navigator.of(context).pop();
-        widget.onCompleted();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-          _errorMessage = '업로드 중 오류가 발생했습니다: $e';
-        });
-      }
-      print('이미지 업로드 오류: $e');
     }
   }
 
-  // 프로필 설정 건너뛰기
-  void _skipProfileSetup() async {
-    setState(() {
-      _isUploading = true;
-    });
-
-    try {
-      // 첫 로그인 상태만 변경
-      await AuthService.setFirstLoginCompleted();
-
-      if (mounted) {
-        // 다이얼로그 닫기
-        Navigator.of(context).pop();
-        widget.onCompleted();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-          _errorMessage = '오류가 발생했습니다: $e';
-        });
-      }
+  void _uploadImage() {
+    if (_selectedImage != null) {
+      // 선택한 이미지 사용
+      widget.onImageSelected?.call(_selectedImage);
+    } else if (_selectedOption == 2) {
+      // 기본 프로필 선택
+      widget.onImageSelected?.call(null);
+    } else {
+      setState(() {
+        _errorMessage = '프로필 옵션을 선택해 주세요.';
+      });
     }
+  }
+
+  void _skipProfileSetup() {
+    widget.onImageSelected?.call(null);
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+
+    // 화면 크기에 맞춘 모달 크기 계산 (none_goal_modal과 동일)
+    final modalWidth =
+        isTablet
+            ? (screenWidth * 0.65).clamp(300.0, 400.0)
+            : (screenWidth * 0.85).clamp(280.0, 350.0);
+    final modalHeight =
+        isTablet
+            ? (screenHeight * 0.5).clamp(280.0, 380.0)
+            : (screenHeight * 0.45).clamp(250.0, 320.0);
+
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 50),
       child: Container(
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '프로필 사진 설정',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '리틀뱅크에서 사용할 프로필 사진을 설정해주세요.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black54),
-              ),
-              const SizedBox(height: 24),
-
-              // 이미지 표시 영역
-              GestureDetector(
-                onTap: _isUploading ? null : _showImageSourceOptions,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.primaryColor, width: 2),
-                    image:
-                        _selectedImage != null
-                            ? DecorationImage(
-                              image: FileImage(_selectedImage!),
-                              fit: BoxFit.cover,
-                            )
-                            : null,
+        width: modalWidth,
+        height: modalHeight,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 상단 헤더
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 6),
+              decoration: const ShapeDecoration(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
                   ),
-                  child:
-                      _selectedImage == null
-                          ? const Icon(
-                            Icons.add_a_photo,
-                            color: AppColors.primaryColor,
-                            size: 40,
-                          )
-                          : null,
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // 안내 텍스트
-              Text(
-                _selectedImage == null ? '탭하여 사진을 선택하세요' : '탭하여 사진을 변경하세요',
-                style: const TextStyle(fontSize: 14, color: Colors.black54),
-              ),
-
-              // 에러 메시지 표시
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-
-              const SizedBox(height: 24),
-
-              // 버튼 영역
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 건너뛰기 버튼
-                  TextButton(
-                    onPressed: _isUploading ? null : _skipProfileSetup,
-                    child: const Text(
-                      '건너뛰기',
-                      style: TextStyle(color: Colors.grey),
+                  Text(
+                    '프로필을 설정해 볼까요?',
+                    style: TextStyle(
+                      color: const Color(0xFF202020),
+                      fontSize: isTablet ? 18 : 16,
+                      fontFamily: 'Pretendard-Bold',
+                      letterSpacing: -0.64,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-
-                  // 업로드 버튼
-                  ElevatedButton(
-                    onPressed: _isUploading ? null : _uploadImage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '나만의 개성이 담긴 사진을 설정하고 시작해 보세요!',
+                    style: TextStyle(
+                      color: const Color(0xFF999999),
+                      fontSize: isTablet ? 14 : 12,
+                      fontFamily: 'Pretendard-Light',
+                      letterSpacing: -0.24,
                     ),
-                    child:
-                        _isUploading
-                            ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                            : const Text('설정 완료'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+
+            // 프로필 옵션 영역
+            Flexible(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: const BoxDecoration(color: Colors.white),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // 카메라 옵션
+                      GestureDetector(
+                        onTap:
+                            _isUploading
+                                ? null
+                                : () {
+                                  setState(() {
+                                    _selectedOption = 0;
+                                  });
+                                  _selectImage(ImageSource.camera);
+                                },
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: ShapeDecoration(
+                            color: const Color(0xFFE7ECF6),
+                            shape: OvalBorder(),
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/icons/my/camera.png',
+                              width: 30,
+                              height: 30,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 갤러리 옵션
+                      GestureDetector(
+                        onTap:
+                            _isUploading
+                                ? null
+                                : () {
+                                  setState(() {
+                                    _selectedOption = 1;
+                                  });
+                                  _selectImage(ImageSource.gallery);
+                                },
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: ShapeDecoration(
+                            color: const Color(0xFFE7ECF6),
+                            shape: OvalBorder(),
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/icons/my/gallery.png',
+                              width: 30,
+                              height: 30,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 기본 프로필 옵션 (미리보기 겸용)
+                      GestureDetector(
+                        onTap:
+                            _isUploading
+                                ? null
+                                : () {
+                                  setState(() {
+                                    _selectedOption = 2;
+                                    _selectedImage = null;
+                                    _errorMessage = null;
+                                  });
+                                },
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color:
+                                  ((_selectedOption == 2 &&
+                                              _selectedImage == null) ||
+                                          (_selectedImage != null))
+                                      ? const Color(0xFF3A88F4)
+                                      : Colors.transparent,
+                              width: 3,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(35),
+                            child:
+                                _selectedImage != null
+                                    ? Image.file(
+                                      _selectedImage!,
+                                      width: 64,
+                                      height: 64,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : Image.asset(
+                                      'assets/icons/my/default_profile.png',
+                                      width: 60,
+                                      height: 60,
+                                    ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // 에러 메시지 영역
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
+                    fontFamily: 'Pretendard-Light',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
+            // 하단 버튼 영역
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                bottom: 16,
+                top: 8,
+              ),
+              decoration: const ShapeDecoration(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  // 다음에 하기 버튼
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _isUploading ? null : _skipProfileSetup,
+                      child: Container(
+                        height: 48,
+                        decoration: ShapeDecoration(
+                          color: const Color(0xFFB6B6B6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '다음에 하기',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isTablet ? 15 : 14,
+                              fontFamily: 'Pretendard-Medium',
+                              letterSpacing: -0.28,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // 설정 완료 버튼
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _isUploading ? null : _uploadImage,
+                      child: Container(
+                        height: 48,
+                        decoration: ShapeDecoration(
+                          color: const Color(0xFF3A88F4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Center(
+                          child:
+                              _isUploading
+                                  ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : Text(
+                                    '설정 완료',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: isTablet ? 15 : 14,
+                                      fontFamily: 'Pretendard-Medium',
+                                      letterSpacing: -0.28,
+                                    ),
+                                  ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

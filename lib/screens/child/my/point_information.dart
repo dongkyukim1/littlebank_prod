@@ -14,8 +14,8 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
   final String _selectedCategory = '전체';
   
   // 필터 관련 변수 추가
-  bool _isFilterVisible = false;
-  String _selectedSortOption = '최신순';
+  final bool _isFilterVisible = false;
+  final String _selectedSortOption = '최신순';
   final List<String> _sortOptions = ['최신순', '오래된순', '금액 높은순', '금액 낮은순'];
   
   // 날짜 범위 필터
@@ -24,7 +24,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
   
   // 포인트 유형 필터
   final List<String> _pointTypes = ['미션', '챌린지', '목표'];
-  List<bool> _selectedPointTypes = [true, true, true]; // 기본적으로 모두 선택됨
+  final List<bool> _selectedPointTypes = [true, true, true]; // 기본적으로 모두 선택됨
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +35,11 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          '총 적립 내역',
+          '총 포인트 내역',
           style: TextStyle(
-            color: Colors.black,
+            color: Color(0xFF202020),
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontFamily: 'Pretendard-Bold',
           ),
         ),
         leading: IconButton(
@@ -63,7 +63,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
       body: Column(
         children: [
           // 적립금/포인트 탭 추가 - 고정 부분
-          Container(
+          SizedBox(
             width: MediaQuery.of(context).size.width,
             height: 50, // 높이 증가
             child: Stack(
@@ -94,9 +94,8 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                               '적립금',
                               style: TextStyle(
                                 color: Color(0xFFC4C4C4),
-                                fontSize: 18, // 글씨 크기 증가
-                                fontFamily: 'Pretendard',
-                                fontWeight: FontWeight.w400,
+                                fontSize: 16, // 글씨 크기 증가
+                                fontFamily: 'Pretendard-Light',
                                 letterSpacing: -0.32,
                               ),
                             ),
@@ -124,9 +123,8 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                             '포인트',
                             style: TextStyle(
                               color: Color(0xFF202020),
-                              fontSize: 18, // 글씨 크기 증가
-                              fontFamily: 'Pretendard',
-                              fontWeight: FontWeight.w700,
+                              fontSize: 16, // 글씨 크기 증가
+                              fontFamily: 'Pretendard-Bold',
                               letterSpacing: -0.32,
                             ),
                           ),
@@ -216,7 +214,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 16,
-                fontWeight: FontWeight.w400,
+                fontFamily: 'Pretendard-Regular',
                 height: 1.0,
               ),
             ),
@@ -228,7 +226,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
             style: TextStyle(
               color: Colors.black,
               fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontFamily: 'Pretendard-Bold',
               height: 1.0,
             ),
           ),
@@ -243,7 +241,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 13, 
-                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Pretendard-Light',
                 ),
               ),
               Text(
@@ -251,7 +249,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                 style: TextStyle(
                   color: const Color(0xFF3A88F4),
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Pretendard-Medium',
                 ),
               ),
               Text(
@@ -259,7 +257,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 13,
-                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Pretendard-Light',
                 ),
               ),
             ],
@@ -369,8 +367,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                         style: TextStyle(
                           color: Color(0xFF353535),
                           fontSize: 10,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Pretendard-Medium',
                         ),
                       ),
                     ],
@@ -393,8 +390,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                         style: TextStyle(
                           color: Color(0xFF353535),
                           fontSize: 10,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Pretendard-Medium',
                         ),
                       ),
                     ],
@@ -417,8 +413,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                         style: TextStyle(
                           color: Color(0xFF353535),
                           fontSize: 10,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Pretendard-Medium',
                         ),
                       ),
                     ],
@@ -441,9 +436,6 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
-            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -456,16 +448,16 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                     '전체 내역 ',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      fontFamily: 'Pretendard-Medium',
                     ),
                   ),
                   Text(
                     '80',
                     style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF3A88F4),
+                      fontSize: 15,
+                      fontFamily: 'Pretendard-SemiBold',
                     ),
                   ),
                 ],
@@ -474,7 +466,11 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
               // 정렬 아이콘 - 필터 모달 열기
               GestureDetector(
                 onTap: _showFilterBottomSheet,
-                child: Icon(Icons.tune, color: Colors.grey[500], size: 22),
+                child: Image.asset(
+                  'assets/icons/my/필터.png',
+                  width: 22,
+                  height: 22,
+                ),
               ),
             ],
           ),
@@ -484,10 +480,10 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           alignment: Alignment.centerLeft,
-          child: Icon(
-            Icons.search,
-            color: Colors.grey[400],
-            size: 24,
+          child: Image.asset(
+            'assets/icons/my/검색.png',
+            width: 24,
+            height: 24,
           ),
         ),
       ],
@@ -516,11 +512,11 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                   topRight: Radius.circular(20),
                 ),
                 boxShadow: [
-                  BoxShadow(
-                    color: Color(0x5C000000),
-                    blurRadius: 8,
-                    offset: Offset(0, -2),
-                  ),
+                  // BoxShadow(
+                  //   color: Colors.black.withOpacity(0.15),
+                  //   blurRadius: 8,
+                  //   offset: Offset(0, -2),
+                  // ),
                 ],
               ),
               child: SingleChildScrollView(
@@ -538,7 +534,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                             '포인트 내역을 조회할 기간을 정해주세요',
                             style: TextStyle(
                               fontSize: 16,
-                              fontFamily: 'Pretendard',
+                              fontFamily: 'Pretendard-Bold',
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF202020),
                             ),
@@ -556,7 +552,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                         '원하는 기간별로 포인트 내역을 나눠볼 수 있어요',
                         style: TextStyle(
                           fontSize: 12,
-                          fontFamily: 'Pretendard',
+                          fontFamily: 'Pretendard-Light',
                           fontWeight: FontWeight.w300,
                           color: Color(0xFF999999),
                         ),
@@ -597,7 +593,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                                 '전체',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontFamily: 'Pretendard',
+                                  fontFamily: 'Pretendard-Medium',
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -633,7 +629,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                                 '1개월',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontFamily: 'Pretendard',
+                                  fontFamily: 'Pretendard-Medium',
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -742,8 +738,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                                   '취소',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w100,
+                                    fontFamily: 'Pretendard-Thin',
                                     color: Colors.grey[500],
                                   ),
                                 ),
@@ -776,8 +771,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                                   '완료',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w100,
+                                    fontFamily: 'Pretendard-Thin',
                                     color: Colors.white,
                                   ),
                                 ),
@@ -858,8 +852,8 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
             section['date'],
             style: TextStyle(
               color: Colors.grey[500],
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              fontFamily: 'Pretendard-Light',
             ),
           ),
         )
@@ -879,17 +873,6 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
             totalAmount: item['totalAmount'],
           )
         );
-        
-        if (!isLast) {
-          sectionWidgets.add(
-            Divider(
-              height: 1,
-              color: Colors.grey.withOpacity(0.1),
-              indent: 20,
-              endIndent: 20,
-            )
-          );
-        }
       }
     }
 
@@ -919,19 +902,19 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                 child: Text(
                   title,
                   style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    color: Color.fromRGBO(0, 31, 85, 1),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Medium',
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
                 amount,
                 style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF3A88F4),
+                  fontSize: 14,
+                  fontFamily: 'Pretendard-Bold',
                 ),
               ),
             ],
@@ -948,7 +931,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 10,
-                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Pretendard-Light',
                 ),
               ),
               Text(
@@ -956,7 +939,7 @@ class _PointInformationScreenState extends State<PointInformationScreen> {
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 10,
-                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Pretendard-Light',
                 ),
               ),
             ],
@@ -976,12 +959,12 @@ class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            offset: Offset(0, 4),
-            blurRadius: 10,
-            spreadRadius: 0,
-          ),
+          // BoxShadow(
+          //   color: Colors.black.withOpacity(0.15),
+          //   offset: Offset(0, 4),
+          //   blurRadius: 10,
+          //   spreadRadius: 0,
+          // ),
         ],
       ),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -996,12 +979,12 @@ class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
               color: const Color(0xFF3A88F4),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  offset: Offset(0, 2),
-                  blurRadius: 4,
-                  spreadRadius: 0,
-                ),
+                // BoxShadow(
+                //   color: Colors.black.withOpacity(0.15),
+                //   offset: Offset(0, 2),
+                //   blurRadius: 4,
+                //   spreadRadius: 0,
+                // ),
               ],
             ),
             alignment: Alignment.center,
@@ -1010,8 +993,7 @@ class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 14, // 글씨 크기 감소
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w500,
+                fontFamily: 'Pretendard-Medium',
               ),
             ),
           ),
@@ -1030,12 +1012,12 @@ class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
                 width: 0.8,
               ),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  offset: Offset(0, 2),
-                  blurRadius: 4,
-                  spreadRadius: 0,
-                ),
+                // BoxShadow(
+                //   color: Colors.black.withOpacity(0.1),
+                //   offset: Offset(0, 2),
+                //   blurRadius: 4,
+                //   spreadRadius: 0,
+                // ),
               ],
             ),
             alignment: Alignment.center,
@@ -1044,8 +1026,7 @@ class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
               style: TextStyle(
                 color: const Color(0xFF3A88F4),
                 fontSize: 14, // 글씨 크기 감소
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w300,
+                fontFamily: 'Pretendard-Medium',
               ),
             ),
           ),
@@ -1064,12 +1045,12 @@ class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
                 width: 0.8,
               ),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  offset: Offset(0, 2),
-                  blurRadius: 4,
-                  spreadRadius: 0,
-                ),
+                // BoxShadow(
+                //   color: Colors.black.withOpacity(0.1),
+                //   offset: Offset(0, 2),
+                //   blurRadius: 4,
+                //   spreadRadius: 0,
+                // ),
               ],
             ),
             alignment: Alignment.center,
@@ -1078,8 +1059,7 @@ class _SliverCategoryButtonsDelegate extends SliverPersistentHeaderDelegate {
               style: TextStyle(
                 color: const Color(0xFF3A88F4),
                 fontSize: 14, // 글씨 크기 감소
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w300,
+                fontFamily: 'Pretendard-Medium',
               ),
             ),
           ),

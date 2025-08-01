@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.android_design_preview">
+    package="com.littlebank.littlebank">
     <application
         android:label="littlebank"
         android:icon="@mipmap/ic_launcher">
@@ -24,6 +24,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- 포트원 플러터 설정 -->
+        <application
+            android:usesCleartextTraffic="true"
+        >
+        </application>
         <!-- 카카오 로그인 설정 -->
         <activity 
             android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"

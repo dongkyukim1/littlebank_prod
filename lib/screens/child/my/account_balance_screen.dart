@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/common/bottom_navigation_bar.dart';
 
 class AccountBalanceScreen extends StatefulWidget {
   const AccountBalanceScreen({super.key});
@@ -34,11 +33,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
         ),
         actions: [
           IconButton(
-            icon: Image.asset(
-              'assets/images/home.png', 
-              width: 24, 
-              height: 24,
-            ),
+            icon: Image.asset('assets/images/home.png', width: 24, height: 24),
             onPressed: () {
               // 홈 화면으로 이동
             },
@@ -52,7 +47,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
           children: [
             // 계좌 정보 카드
             _buildAccountInfoCard(),
-            
+
             // 계좌 내역 섹션
             _buildAccountHistorySection(),
           ],
@@ -75,7 +70,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
               blurRadius: 8,
               offset: Offset(0, -4),
               spreadRadius: 0,
-            )
+            ),
           ],
         ),
         child: Container(
@@ -87,20 +82,26 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
               end: Alignment(1.23, 1.20),
               colors: [const Color(0xFF89DA8D), const Color(0xFF5D9EFF)],
             ),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_circle_outline, color: Colors.white, size: 16),
-              SizedBox(width: 8),
+              Image.asset(
+                'assets/icons/my/충전하기.png',
+                width: 24,
+                height: 24,
+                color: Colors.white,
+              ),
+              SizedBox(width: 15),
               Text(
                 '충전하기',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Pretendard-Medium',
                   letterSpacing: -0.28,
                 ),
               ),
@@ -110,7 +111,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
       ),
     );
   }
-  
+
   // 계좌 정보 카드 위젯
   Widget _buildAccountInfoCard() {
     return Container(
@@ -118,9 +119,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
       padding: const EdgeInsets.all(12),
       decoration: ShapeDecoration(
         color: const Color(0xFFEFF2F6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -172,8 +171,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                                   style: TextStyle(
                                     color: const Color(0xFF666666),
                                     fontSize: 11,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w300,
+                                    fontFamily: 'Pretendard-Light',
                                     letterSpacing: -0.22,
                                   ),
                                 ),
@@ -182,8 +180,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                                   style: TextStyle(
                                     color: const Color(0xFF666666),
                                     fontSize: 11,
-                                    fontFamily: 'Pretendard',
-                                    fontWeight: FontWeight.w300,
+                                    fontFamily: 'Pretendard-Light',
                                     letterSpacing: -0.22,
                                   ),
                                 ),
@@ -197,8 +194,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                               style: TextStyle(
                                 color: const Color(0xFF999999),
                                 fontSize: 11,
-                                fontFamily: 'Pretendard',
-                                fontWeight: FontWeight.w300,
+                                fontFamily: 'Pretendard-Light',
                                 letterSpacing: -0.22,
                               ),
                             ),
@@ -215,7 +211,9 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                               context: context,
                               isScrollControlled: true,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(24),
+                                ),
                               ),
                               builder: (context) => AccountManageBottomSheet(),
                             );
@@ -243,9 +241,8 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: const Color(0xFF202020),
-                          fontSize: 12,
-                          fontFamily: 'Pretendard',
-                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          fontFamily: 'Pretendard-Medium',
                           letterSpacing: -0.28,
                         ),
                       ),
@@ -284,7 +281,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
       ),
     );
   }
-  
+
   // 계좌 내역 섹션 위젯
   Widget _buildAccountHistorySection() {
     // 가상 데이터 - 들어온 돈 내역
@@ -306,7 +303,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
             'amount': '+34,000원',
             'balance': '415,000원',
           },
-        ]
+        ],
       },
     ];
 
@@ -329,7 +326,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
             'amount': '-3,500원',
             'balance': '386,000원',
           },
-        ]
+        ],
       },
     ];
 
@@ -344,10 +341,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
           width: double.infinity,
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(
-                color: Colors.grey.withOpacity(0.3),
-                width: 1,
-              ),
+              bottom: BorderSide(color: Colors.grey.withOpacity(0.3), width: 1),
             ),
           ),
           child: Row(
@@ -367,7 +361,10 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                          color: _selectedTabIndex == 0 ? Colors.black : Colors.transparent,
+                          color:
+                              _selectedTabIndex == 0
+                                  ? Colors.black
+                                  : Colors.transparent,
                           width: 2.5,
                         ),
                       ),
@@ -376,10 +373,15 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                       '들어온 돈',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _selectedTabIndex == 0 ? const Color(0xFF202020) : const Color(0xFFCCCCCC),
+                        color:
+                            _selectedTabIndex == 0
+                                ? const Color(0xFF202020)
+                                : const Color(0xFFCCCCCC),
                         fontSize: 13,
-                        fontFamily: 'Pretendard',
-                        fontWeight: _selectedTabIndex == 0 ? FontWeight.w700 : FontWeight.w300,
+                        fontFamily:
+                            _selectedTabIndex == 0
+                                ? 'Pretendard-Medium'
+                                : 'Pretendard-Light',
                         letterSpacing: -0.30,
                       ),
                     ),
@@ -401,7 +403,10 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                          color: _selectedTabIndex == 1 ? Colors.black : Colors.transparent,
+                          color:
+                              _selectedTabIndex == 1
+                                  ? Colors.black
+                                  : Colors.transparent,
                           width: 2.5,
                         ),
                       ),
@@ -410,10 +415,15 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
                       '나간 돈',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _selectedTabIndex == 1 ? const Color(0xFF202020) : const Color(0xFFCCCCCC),
+                        color:
+                            _selectedTabIndex == 1
+                                ? const Color(0xFF202020)
+                                : const Color(0xFFCCCCCC),
                         fontSize: 13,
-                        fontFamily: 'Pretendard',
-                        fontWeight: _selectedTabIndex == 1 ? FontWeight.w700 : FontWeight.w300,
+                        fontFamily:
+                            _selectedTabIndex == 1
+                                ? 'Pretendard-Medium'
+                                : 'Pretendard-Light',
                         letterSpacing: -0.30,
                       ),
                     ),
@@ -423,70 +433,10 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
             ],
           ),
         ),
-        
-        // 전체 내역 및 개수
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    '전체 내역',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: const Color(0xFF4A4A4A),
-                      fontSize: 14,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.26,
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 4),
-                  
-                  Text(
-                    '80',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: const Color(0xFF5D9EFF),
-                      fontSize: 12.8,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.26,
-                    ),
-                  ),
-                ],
-              ),
-              
-              Icon(
-                Icons.tune,
-                color: Colors.grey[400],
-                size: 16,
-              ),
-            ],
-          ),
-        ),
-        
-        // 구분선
-        Divider(
-          color: Colors.grey.withOpacity(0.2),
-          height: 1,
-          thickness: 1,
-        ),
-        
-        // 검색 아이콘
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          alignment: Alignment.centerLeft,
-          child: Icon(
-            Icons.search,
-            color: Colors.grey[400],
-            size: 19,
-          ),
-        ),
-        
+
+        // 거래 내역 섹션 빌드
+        _buildTransactionHistory(),
+
         // 내역 리스트
         ListView.builder(
           shrinkWrap: true,
@@ -498,21 +448,24 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 날짜 헤더
-                Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 12, top: 4, bottom: 6),
+                Container(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    sectionIndex == 0 ? 10 : 24,
+                    20,
+                    4,
+                  ),
+                  alignment: Alignment.centerLeft,
                   child: Text(
                     section['date'],
-                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: const Color(0xFF999999),
-                      fontSize: 13,
-                      fontFamily: 'Pretendard',
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: -0.19,
+                      color: Color(0xFF8E8E8E),
+                      fontSize: 12,
+                      fontFamily: 'Pretendard-Light',
                     ),
                   ),
                 ),
-                
+
                 // 해당 날짜의 내역 항목들
                 ...List.generate(
                   section['items'].length,
@@ -525,127 +478,139 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
       ],
     );
   }
-  
+
+  // 거래 내역 섹션 빌드
+  Widget _buildTransactionHistory() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 전체 내역 및 개수
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(color: Colors.white),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 전체 내역 수
+              Row(
+                children: [
+                  Text(
+                    '전체 내역 ',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontFamily: 'Pretendard-Medium',
+                    ),
+                  ),
+                  Text(
+                    '80',
+                    style: TextStyle(
+                      color: Color(0xFF3A88F4),
+                      fontSize: 15,
+                      fontFamily: 'Pretendard-SemiBold',
+                    ),
+                  ),
+                ],
+              ),
+
+              // 정렬 아이콘
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                    ),
+                    builder: (context) => FilterBottomSheet(),
+                  );
+                },
+                child: Image.asset(
+                  'assets/icons/my/필터.png',
+                  width: 22,
+                  height: 22,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 검색 아이콘
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          alignment: Alignment.centerLeft,
+          child: Image.asset('assets/icons/my/검색.png', width: 24, height: 24),
+        ),
+      ],
+    );
+  }
+
   // 내역 항목 위젯
   Widget _buildHistoryItem(Map<String, dynamic> item) {
     // 금액이 양수인지 확인
     bool isIncoming = item['amount'].toString().contains('+');
-    
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      margin: const EdgeInsets.only(bottom: 1),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.withOpacity(0.2),
-            width: 0.5,
-          ),
-        ),
-      ),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      color: Colors.white,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 왼쪽: 제목 및 상세 정보
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 제목
-                Text(
+          // 제목 및 금액
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
                   item['title'],
-                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: const Color(0xFF666666),
-                    fontSize: 11.2,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: -0.22,
+                    color: Color(0xFF001F55),
+                    fontSize: 14,
+                    fontFamily: 'Pretendard-Medium',
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                
-                const SizedBox(height: 8),
-                
-                // 유형 및 시간
-                Row(
-                  children: [
-                    Text(
-                      item['type'],
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xFF999999),
-                        fontSize: 11.2,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: -0.22,
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 8),
-                    
-                    Container(
-                      width: 2,
-                      height: 2,
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFF999999),
-                        shape: OvalBorder(),
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 8),
-                    
-                    Text(
-                      item['time'],
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xFF999999),
-                        fontSize: 11.2,
-                        fontFamily: 'Pretendard',
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: -0.22,
-                      ),
-                    ),
-                  ],
+              ),
+              Text(
+                item['amount'],
+                style: TextStyle(
+                  color:
+                      isIncoming
+                          ? const Color(0xFF3A88F4)
+                          : const Color(0xFFFF6B6B),
+                  fontSize: 14,
+                  fontFamily: 'Pretendard-Bold',
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          
-          // 오른쪽: 금액 및 잔액
-          SizedBox(
-            width: 120,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // 금액
-                Text(
-                  item['amount'],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isIncoming ? const Color(0xFF3A88F4) : const Color(0xFFFF6B6B),
-                    fontSize: 12.8,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.26,
-                  ),
+
+          const SizedBox(height: 6),
+
+          // 날짜 및 잔액
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                item['time'],
+                style: TextStyle(
+                  color: Color(0xFF8E8E8E),
+                  fontSize: 12,
+                  fontFamily: 'Pretendard-Light',
                 ),
-                
-                const SizedBox(height: 8),
-                
-                // 잔액
-                Text(
-                  item['balance'],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: const Color(0xFF999999),
-                    fontSize: 9.6,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w300,
-                    letterSpacing: -0.19,
-                  ),
+              ),
+              Text(
+                item['balance'],
+                style: TextStyle(
+                  color: Color(0xFF8E8E8E),
+                  fontSize: 12,
+                  fontFamily: 'Pretendard-Light',
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -655,7 +620,7 @@ class _AccountBalanceScreenState extends State<AccountBalanceScreen> {
 
 class AccountManageBottomSheet extends StatelessWidget {
   const AccountManageBottomSheet({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -673,7 +638,12 @@ class AccountManageBottomSheet extends StatelessWidget {
         children: [
           // 제목 영역
           Padding(
-            padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 8),
+            padding: const EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 16,
+              bottom: 8,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -682,8 +652,7 @@ class AccountManageBottomSheet extends StatelessWidget {
                   style: TextStyle(
                     color: const Color(0xFF202020),
                     fontSize: 18,
-                    fontFamily: 'Pretendard',
-                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Pretendard-Bold',
                     letterSpacing: -0.72,
                   ),
                 ),
@@ -692,63 +661,45 @@ class AccountManageBottomSheet extends StatelessWidget {
                   icon: Icon(Icons.close, color: Colors.grey[400], size: 24),
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
-                )
+                ),
               ],
             ),
           ),
-          
+
           // 메뉴 항목들
           _buildMenuItem(
-            context: context, 
-            title: '입출금 알림 설정하기', 
+            context: context,
+            title: '입출금 알림 설정하기',
             icon: Icons.notifications_none,
             onTap: () {
               print('입출금 알림 설정');
               Navigator.pop(context);
-            }
+            },
           ),
-          
-          // 구분선 (양쪽 여백 있음)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(color: Colors.grey.withOpacity(0.1), height: 1, thickness: 1),
-          ),
-          
+
           _buildMenuItem(
-            context: context, 
-            title: '계좌 이름 바꾸기', 
+            context: context,
+            title: '계좌 이름 바꾸기',
             icon: Icons.edit_outlined,
             onTap: () {
               print('계좌 이름 바꾸기');
               Navigator.pop(context);
-            }
+            },
           ),
-          
-          // 구분선 (양쪽 여백 있음)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(color: Colors.grey.withOpacity(0.1), height: 1, thickness: 1),
-          ),
-          
+
           _buildMenuItem(
-            context: context, 
-            title: '연결된 계좌 바꾸기', 
+            context: context,
+            title: '연결된 계좌 바꾸기',
             icon: Icons.account_balance_outlined,
             onTap: () {
               print('연결된 계좌 바꾸기');
               Navigator.pop(context);
-            }
+            },
           ),
-          
-          // 구분선 (양쪽 여백 있음)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(color: Colors.grey.withOpacity(0.1), height: 1, thickness: 1),
-          ),
-          
+
           _buildMenuItem(
-            context: context, 
-            title: '계좌 삭제하기', 
+            context: context,
+            title: '계좌 삭제하기',
             icon: Icons.delete_outline,
             onTap: () {
               print('계좌 삭제하기');
@@ -756,19 +707,18 @@ class AccountManageBottomSheet extends StatelessWidget {
             },
             textColor: Color(0xFFFF6B6B),
           ),
-          
+
           SizedBox(height: 16), // 하단 여백
         ],
       ),
     );
   }
-  
+
   Widget _buildMenuItem({
     required BuildContext context,
     required String title,
     required IconData icon,
     required Function() onTap,
-    bool isLast = false,
     Color? textColor,
   }) {
     return InkWell(
@@ -778,30 +728,176 @@ class AccountManageBottomSheet extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            Icon(icon, 
-              color: textColor ?? const Color(0xFF666666), 
-              size: 20
-            ),
+            Icon(icon, color: textColor ?? const Color(0xFF666666), size: 20),
             SizedBox(width: 16),
             Text(
               title,
               style: TextStyle(
                 color: textColor ?? const Color(0xFF666666),
                 fontSize: 14,
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w300,
+                fontFamily: 'Pretendard-Light',
                 letterSpacing: -0.28,
               ),
             ),
             Spacer(),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey[300],
-              size: 16,
-            ),
+            Icon(Icons.arrow_forward_ios, color: Colors.grey[300], size: 16),
           ],
         ),
       ),
     );
   }
-} 
+}
+
+// 필터 바텀시트 위젯 추가
+class FilterBottomSheet extends StatelessWidget {
+  const FilterBottomSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 260, // 구분선 추가로 높이 약간 증가
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 제목 영역
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: ShapeDecoration(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '충전 계좌를 관리할 수 있어요',
+                  style: TextStyle(
+                    color: const Color(0xFF202020),
+                    fontSize: 16,
+                    fontFamily: 'Pretendard-Bold',
+                    letterSpacing: -0.64,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: Icon(
+                      Icons.close,
+                      size: 24,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 메뉴 항목들
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+            decoration: BoxDecoration(color: Colors.white),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 입출금 알림 설정하기
+                _buildFilterItem(
+                  context: context,
+                  title: '입출금 알림 설정하기',
+                  onTap: () {
+                    print('입출금 알림 설정');
+                    Navigator.pop(context);
+                  },
+                ),
+                _buildDivider(),
+
+                // 계좌 이름 바꾸기
+                _buildFilterItem(
+                  context: context,
+                  title: '계좌 이름 바꾸기',
+                  onTap: () {
+                    print('계좌 이름 바꾸기');
+                    Navigator.pop(context);
+                  },
+                ),
+                _buildDivider(),
+
+                // 연결된 계좌 바꾸기
+                _buildFilterItem(
+                  context: context,
+                  title: '연결된 계좌 바꾸기',
+                  onTap: () {
+                    print('연결된 계좌 바꾸기');
+                    Navigator.pop(context);
+                  },
+                ),
+                _buildDivider(),
+
+                // 계좌 삭제하기
+                _buildFilterItem(
+                  context: context,
+                  title: '계좌 삭제하기',
+                  onTap: () {
+                    print('계좌 삭제하기');
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 메뉴 항목 위젯
+  Widget _buildFilterItem({
+    required BuildContext context,
+    required String title,
+    required Function() onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          title,
+          style: TextStyle(
+            color: const Color(0xFF666666),
+            fontSize: 13,
+            fontFamily: 'Pretendard-Light',
+            letterSpacing: -0.28,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 구분선 위젯
+  Widget _buildDivider() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      height: 1,
+      color: Color(0xFFEAEAEA),
+    );
+  }
+}

@@ -8,10 +8,7 @@ import '../../screens/child/my_page_screen.dart';
 class CommonBottomNavigationBar extends StatelessWidget {
   final int selectedIndex;
 
-  const CommonBottomNavigationBar({
-    super.key,
-    required this.selectedIndex,
-  });
+  const CommonBottomNavigationBar({super.key, required this.selectedIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +30,7 @@ class CommonBottomNavigationBar extends StatelessWidget {
 
   Widget _buildNavItem(BuildContext context, String label, int index) {
     final bool isSelected = index == selectedIndex;
-    
+
     String iconName;
     if (label == '홈') {
       iconName = 'home';
@@ -43,15 +40,16 @@ class CommonBottomNavigationBar extends StatelessWidget {
       iconName = 'mission';
     } else if (label == '피드') {
       iconName = 'feed';
-    } else { // 마이
+    } else {
+      // 마이
       iconName = 'my';
     }
-    
+
     String iconPath = 'assets/icons/$iconName.png';
     if (isSelected) {
       iconPath = 'assets/icons/fill_$iconName.png';
     }
-    
+
     return InkWell(
       onTap: () {
         if (!isSelected) {
@@ -77,7 +75,7 @@ class CommonBottomNavigationBar extends StatelessWidget {
                   ),
                 ),
               ),
-            
+
             // 인디케이터 (선택된 경우만)
             if (isSelected)
               Positioned(
@@ -94,7 +92,7 @@ class CommonBottomNavigationBar extends StatelessWidget {
                   ),
                 ),
               ),
-            
+
             // 아이콘과 텍스트
             Positioned(
               top: 15,
@@ -118,7 +116,8 @@ class CommonBottomNavigationBar extends StatelessWidget {
                       label,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: isSelected ? const Color(0xFF10CB86) : Colors.white,
+                        color:
+                            isSelected ? const Color(0xFF10CB86) : Colors.white,
                         fontSize: 11,
                         fontFamily: 'Pretendard',
                         fontWeight: FontWeight.w500,
@@ -137,7 +136,7 @@ class CommonBottomNavigationBar extends StatelessWidget {
 
   void _navigateToScreen(BuildContext context, int index) {
     Widget screen;
-    
+
     switch (index) {
       case 0:
         screen = const HomeScreen();
@@ -157,10 +156,12 @@ class CommonBottomNavigationBar extends StatelessWidget {
       default:
         screen = const HomeScreen();
     }
-    
-    Navigator.pushReplacement(
+
+    // 현재 화면의 모든 라우트를 제거하고 새로운 화면으로 이동
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => screen),
+      (route) => false,
     );
   }
-} 
+}

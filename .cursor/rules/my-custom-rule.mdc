@@ -3,108 +3,139 @@ description:
 globs: 
 alwaysApply: true
 ---
-// Flutter App Expert .cursorrules
+Flutter 개발 가이드라인
+You are an expert in Flutter, Dart, Riverpod, Freezed, Flutter Hooks, and Supabase.
+Key Principles
 
-// Flexibility Notice
+Write concise, technical Dart code with accurate examples.
+Use functional and declarative programming patterns where appropriate.
+Prefer composition over inheritance.
+Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+Structure files: exported widget, subwidgets, helpers, static content, types.
 
-// Note: This is a recommended project structure, but be flexible and adapt to existing project structures.
-// Do not enforce these structural patterns if the project follows a different organization.
-// Focus on maintaining consistency with the existing project architecture while applying Flutter best practices.
+Dart/Flutter
 
-// Flutter Best Practices
+Use const constructors for immutable widgets.
+Leverage Freezed for immutable state classes and unions.
+Use arrow syntax for simple functions and methods.
+Prefer expression bodies for one-line getters and setters.
+Use trailing commas for better formatting and diffs.
 
-const flutterBestPractices = [
-    "Adapt to existing project architecture while maintaining clean code principles",
-    "Use Flutter 3.x features and Material 3 design",
-    "Implement clean architecture with BLoC pattern",
-    "Follow proper state management principles",
-    "Use proper dependency injection",
-    "Implement proper error handling",
-    "Follow platform-specific design guidelines",
-    "Use proper localization techniques",
-];
+Error Handling and Validation
 
-// Project Structure
+Implement error handling in views using SelectableText.rich instead of SnackBars.
+Display errors in SelectableText.rich with red color for visibility.
+Handle empty states within the displaying screen.
+Use AsyncValue for proper error handling and loading states.
 
-// Note: This is a reference structure. Adapt to the project's existing organization
+Riverpod-Specific Guidelines
 
-const projectStructure = `
-lib/
-  core/
-    constants/
-    theme/
-    utils/
-    widgets/
-  features/
-    feature_name/
-      data/
-        datasources/
-        models/
-        repositories/
-      domain/
-        entities/
-        repositories/
-        usecases/
-      presentation/
-        bloc/
-        pages/
-        widgets/
-  l10n/
-  main.dart
-test/
-  unit/
-  widget/
-  integration/
-`;
+Use @riverpod annotation for generating providers.
+Prefer AsyncNotifierProvider and NotifierProvider over StateProvider.
+Avoid StateProvider, StateNotifierProvider, and ChangeNotifierProvider.
+Use ref.invalidate() for manually triggering provider updates.
+Implement proper cancellation of asynchronous operations when widgets are disposed.
 
-// Coding Guidelines
+Performance Optimization
 
-const codingGuidelines = `
-1. Use proper null safety practices
-2. Implement proper error handling with Either type
-3. Follow proper naming conventions
-4. Use proper widget composition
-5. Implement proper routing using GoRouter
-6. Use proper form validation
-7. Follow proper state management with BLoC
-8. Implement proper dependency injection using GetIt
-9. Use proper asset management
-10. Follow proper testing practices
-`;
+Use const widgets where possible to optimize rebuilds.
+Implement list view optimizations (e.g., ListView.builder).
+Use AssetImage for static images and cached_network_image for remote images.
+Implement proper error handling for Supabase operations, including network errors.
 
-// Widget Guidelines
+Key Conventions
 
-const widgetGuidelines = `
-1. Keep widgets small and focused
-2. Use const constructors when possible
-3. Implement proper widget keys
-4. Follow proper layout principles
-5. Use proper widget lifecycle methods
-6. Implement proper error boundaries
-7. Use proper performance optimization techniques
-8. Follow proper accessibility guidelines
-`;
+Use GoRouter or auto_route for navigation and deep linking.
+Optimize for Flutter performance metrics (first meaningful paint, time to interactive).
+Prefer stateless widgets:
 
-// Performance Guidelines
+Use ConsumerWidget with Riverpod for state-dependent widgets.
+Use HookConsumerWidget when combining Riverpod and Flutter Hooks.
 
-const performanceGuidelines = `
-1. Use proper image caching
-2. Implement proper list view optimization
-3. Use proper build methods optimization
-4. Follow proper state management patterns
-5. Implement proper memory management
-6. Use proper platform channels when needed
-7. Follow proper compilation optimization techniques
-`;
 
-// Testing Guidelines
 
-const testingTestingGuidelines = `
-1. Write unit tests for business logic
-2. Implement widget tests for UI components
-3. Use integration tests for feature testing
-4. Implement proper mocking strategies
-5. Use proper test coverage tools
-6. Follow proper test naming conventions
-7. Implement proper CI/CD testing
-`;
+UI and Styling
+
+Use Flutter's built-in widgets and create custom widgets.
+Implement responsive design using LayoutBuilder or MediaQuery.
+Use themes for consistent styling across the app.
+Use Theme.of(context).textTheme.titleLarge instead of headline6, and headlineSmall instead of headline5 etc.
+
+Model and Database Conventions
+
+Include createdAt, updatedAt, and isDeleted fields in database tables.
+Use @JsonSerializable(fieldRename: FieldRename.snake) for models.
+Implement @JsonKey(includeFromJson: true, includeToJson: false) for read-only fields.
+
+Widgets and UI Components
+
+Create small, private widget classes instead of methods like Widget _build....
+Implement RefreshIndicator for pull-to-refresh functionality.
+In TextFields, set appropriate textCapitalization, keyboardType, and textInputAction.
+Always include an errorBuilder when using Image.network.
+
+MCP (Model Context Protocol) Guidelines
+
+Structure and Organization: Follow consistent project structure with clear separation of concerns
+State Management with MCP:
+
+Use Riverpod providers for MCP-related state management
+Implement proper error handling for MCP connections and data fetching
+Use AsyncValue<T> for MCP async operations
+
+
+Data Models:
+
+Create Freezed models for MCP data structures
+Use proper JSON serialization for MCP communication
+Include validation logic in model classes
+
+
+Provider Patterns:
+
+Create dedicated providers for MCP services
+Implement caching strategies for MCP data
+Use ref.watch() and ref.listen() appropriately for MCP state changes
+
+
+Error Handling:
+
+Implement comprehensive error handling for MCP operations
+Use Result<T, E> pattern or AsyncValue for error states
+Display MCP errors using SelectableText.rich with proper styling
+
+
+Performance:
+
+Implement debouncing for frequent MCP calls
+Use proper disposal patterns for MCP connections
+Cache MCP responses when appropriate
+
+
+Testing:
+
+Mock MCP services for unit tests
+Test MCP error scenarios
+Verify proper state transitions
+
+
+
+Miscellaneous
+
+Use log instead of print for debugging.
+Use Flutter Hooks / Riverpod Hooks where appropriate.
+Keep lines no longer than 80 characters, adding commas before closing brackets for multi-parameter functions.
+Use @JsonValue(int) for enums that go to the database.
+
+Code Generation
+
+Utilize build_runner for generating code from annotations (Freezed, Riverpod, JSON serialization).
+Run 'flutter pub run build_runner build --delete-conflicting-outputs' after modifying annotated classes.
+
+Documentation
+
+Document complex logic and non-obvious code decisions.
+Follow official Flutter, Riverpod, and Supabase documentation for best practices.
+Document MCP integration patterns and custom implementations.
+
+Refer to Flutter, Riverpod, Supabase, and MCP documentation for Widgets, State Management, Backend Integration, and Protocol Communication best practices.

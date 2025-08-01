@@ -23,7 +23,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _amountController = TextEditingController(text: _sliderValue.toInt().toString());
+    _amountController = TextEditingController(
+      text: _sliderValue.toInt().toString(),
+    );
   }
 
   @override
@@ -36,7 +38,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
   Widget build(BuildContext context) {
     final goal = widget.goal;
     final double progress = goal['currentAmount'] / goal['targetAmount'];
-    final int daysRemaining = goal['targetDate'].difference(DateTime.now()).inDays;
+    final int daysRemaining =
+        goal['targetDate'].difference(DateTime.now()).inDays;
     final DateFormat dateFormat = DateFormat('yyyy년 MM월 dd일');
     final String targetDateFormatted = dateFormat.format(goal['targetDate']);
 
@@ -86,7 +89,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                           Text(
                             '$daysRemaining일 남음',
                             style: TextStyle(
-                              color: daysRemaining < 7 ? Colors.red : Colors.grey,
+                              color:
+                                  daysRemaining < 7 ? Colors.red : Colors.grey,
                               fontSize: 14,
                             ),
                           ),
@@ -96,9 +100,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       backgroundColor: Colors.grey.shade200,
                       circularStrokeCap: CircularStrokeCap.round,
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // 목표 제목
                     Text(
                       goal['title'],
@@ -108,20 +112,17 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // 금액 정보
                     Text(
                       '${goal['currentAmount']}원 / ${goal['targetAmount']}원',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(color: Colors.grey, fontSize: 16),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // 선형 진행률 표시
                     LinearPercentIndicator(
                       lineHeight: 14.0,
@@ -131,9 +132,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       barRadius: const Radius.circular(7),
                       padding: EdgeInsets.zero,
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // 목표 날짜
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -149,20 +150,17 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // 용돈 추가 섹션
             const Text(
               '용돈 적립하기',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
@@ -174,9 +172,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('적립할 금액'),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // 금액 입력 필드
                     TextField(
                       controller: _amountController,
@@ -190,15 +188,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                           final amount = double.tryParse(value);
                           if (amount != null) {
                             setState(() {
-                              _sliderValue = amount.clamp(_minAmount, _maxAmount);
+                              _sliderValue = amount.clamp(
+                                _minAmount,
+                                _maxAmount,
+                              );
                             });
                           }
                         }
                       },
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // 금액 슬라이더
                     Slider(
                       value: _sliderValue,
@@ -213,30 +214,34 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         });
                       },
                     ),
-                    
+
                     // 금액 퀵 버튼
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: [1000, 2000, 5000, 10000].map((amount) {
-                        return ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _sliderValue = amount.toDouble().clamp(_minAmount, _maxAmount);
-                              _amountController.text = amount.toString();
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey.shade200,
-                            foregroundColor: Colors.black,
-                          ),
-                          child: Text('$amount원'),
-                        );
-                      }).toList(),
+                      children:
+                          [1000, 2000, 5000, 10000].map((amount) {
+                            return ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _sliderValue = amount.toDouble().clamp(
+                                    _minAmount,
+                                    _maxAmount,
+                                  );
+                                  _amountController.text = amount.toString();
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade200,
+                                foregroundColor: Colors.black,
+                              ),
+                              child: Text('$amount원'),
+                            );
+                          }).toList(),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // 적립하기 버튼
                     SizedBox(
                       width: double.infinity,
@@ -251,20 +256,17 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // 적립 내역
             const Text(
               '적립 내역',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // 적립 내역 리스트
             Card(
               elevation: 1,
@@ -301,67 +303,70 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     try {
       final int amount = int.parse(_amountController.text);
       if (amount <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('유효한 금액을 입력해주세요')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('유효한 금액을 입력해주세요')));
         return;
       }
-      
+
       // 실제 앱에서는 서버와 통신하여 목표에 적립 처리
-      final int remainingAmount = widget.goal['targetAmount'] - widget.goal['currentAmount'];
+      final int remainingAmount =
+          widget.goal['targetAmount'] - widget.goal['currentAmount'];
       final int newCurrentAmount = widget.goal['currentAmount'] + amount;
-      
+
       if (amount > remainingAmount) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('목표액을 초과했습니다. 최대 $remainingAmount원까지 적립할 수 있습니다')),
+          SnackBar(
+            content: Text('목표액을 초과했습니다. 최대 $remainingAmount원까지 적립할 수 있습니다'),
+          ),
         );
         return;
       }
-      
+
       // 실제 앱에서는 상태 관리를 통해 목표 정보 업데이트
       setState(() {
         widget.goal['currentAmount'] = newCurrentAmount;
       });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$amount원이 적립되었습니다!')),
-      );
-      
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$amount원이 적립되었습니다!')));
+
       // 목표 달성 시 축하 메시지
       if (newCurrentAmount >= widget.goal['targetAmount']) {
         _showCongratulationsDialog();
       }
-      
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('유효한 금액을 입력해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('유효한 금액을 입력해주세요')));
     }
   }
 
   void _showCongratulationsDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('🎉 목표 달성!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.stars, color: Colors.amber, size: 64),
-            const SizedBox(height: 16),
-            Text(
-              '${widget.goal['title']} 목표를 달성했습니다!\n정말 대단해요!',
-              textAlign: TextAlign.center,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('🎉 목표 달성!'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.stars, color: Colors.amber, size: 64),
+                const SizedBox(height: 16),
+                Text(
+                  '${widget.goal['title']} 목표를 달성했습니다!\n정말 대단해요!',
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('확인'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
-} 
+}

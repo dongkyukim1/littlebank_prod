@@ -3,22 +3,31 @@ import '../../../models/feed_data.dart';
 import '../../../theme/feed_styles.dart';
 import 'feed_item.dart';
 
-class FeedList extends StatelessWidget {
+class FeedList extends StatefulWidget {
   final FeedData feedData;
   final Function(int) onToggleDescription;
   final Function(int) onToggleLike;
+  final Function(int)? onFeedDeleted;
+  final Function(int)? onFeedUpdated;
 
   const FeedList({
     super.key,
     required this.feedData,
     required this.onToggleDescription,
     required this.onToggleLike,
+    this.onFeedDeleted,
+    this.onFeedUpdated,
   });
 
   @override
+  State<FeedList> createState() => _FeedListState();
+}
+
+class _FeedListState extends State<FeedList> {
+  @override
   Widget build(BuildContext context) {
     // 필터링된 피드 목록
-    final filteredFeeds = feedData.getFilteredFeeds();
+    final filteredFeeds = widget.feedData.getFilteredFeeds();
 
     if (filteredFeeds.isEmpty) {
       return Center(
@@ -32,37 +41,79 @@ class FeedList extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+                fontFamily: 'Pretendard-Medium',
               ),
             ),
             const SizedBox(height: 8),
             Text(
               '다른 필터를 선택해보세요',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+                fontFamily: 'Pretendard-Light',
+              ),
             ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      physics: const ClampingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       itemCount: filteredFeeds.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 24), // 피드들 간의 간격을 24px로 설정
       itemBuilder: (context, index) {
         final feed = filteredFeeds[index];
-        final originalIndex = feedData.feeds.indexOf(feed);
+        final originalIndex = widget.feedData.feeds.indexOf(feed);
         return FeedItemWidget(
           feed: feed,
           index: originalIndex,
           isDescriptionExpanded:
-              feedData.expandedDescriptions[originalIndex] ?? false,
-          onToggleDescription: onToggleDescription,
-          onToggleLike: onToggleLike,
+              widget.feedData.expandedDescriptions[originalIndex] ?? false,
+          onToggleDescription: widget.onToggleDescription,
+          onToggleLike: widget.onToggleLike,
+          onCommentAdded: _handleCommentAdded,
+          onCommentEdited: _handleCommentEdited,
+          onCommentDeleted: _handleCommentDeleted,
+          onFeedDeleted: widget.onFeedDeleted != null
+              ? (deletedIndex) => widget.onFeedDeleted!(index)
+              : null,
+          onFeedUpdated: widget.onFeedUpdated != null
+              ? (updatedIndex) => widget.onFeedUpdated!(index)
+              : null,
         );
       },
     );
+  }
+  
+  // 각 아이템의 댓글 수 업데이트
+  void _updateCommentCount(int feedId, int change) {
+    for (int i = 0; i < widget.feedData.feeds.length; i++) {
+      if (widget.feedData.feeds[i].feedId == feedId) {
+        setState(() {
+          widget.feedData.feeds[i].commentCount = 
+              (widget.feedData.feeds[i].commentCount ?? 0) + change;
+        });
+        break;
+      }
+    }
+  }
+
+  // 댓글 추가 처리
+  void _handleCommentAdded(int feedId, Map<String, dynamic> newComment) {
+    _updateCommentCount(feedId, 1); // 댓글 추가 시 +1
+  }
+
+  // 댓글 수정 처리
+  void _handleCommentEdited(int feedId, int commentId, String content) {
+    // 댓글 수정은 수에 변화가 없으므로 처리하지 않음
+  }
+
+  // 댓글 삭제 처리
+  void _handleCommentDeleted(int feedId, int commentId) {
+    _updateCommentCount(feedId, -1); // 댓글 삭제 시 -1
   }
 }
 
@@ -79,39 +130,91 @@ class SortTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 화면 너비를 받아 반응형으로 만듦
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(
-        left: 12.0,
-        top: 8.0,
-        right: 12.0,
-        bottom: 8.0,
+      width: null, // 고정 너비 제거하여 Flexible이 작동하도록 함
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF0F2F7), // 배경색을 #F0F2F7로 설정
       ),
-      color: Colors.white,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // 필요한 공간만 사용
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start, // 상단 정렬로 변경
         children: [
-          InkWell(
+          GestureDetector(
             onTap: () => onSortTypeChanged(0),
-            child: Text(
-              '• 최신순',
-              style: TextStyle(
-                color: sortType == 0 ? Colors.red : Colors.grey[400],
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start, // 점도 상단 정렬로 변경
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.only(top: 3), // 약간의 여백 추가
+                  decoration: ShapeDecoration(
+                    color:
+                        sortType == 0
+                            ? const Color(0xFF5D9EFF)
+                            : const Color(0xFFB6B6B6),
+                    shape: const OvalBorder(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '최신순',
+                  style: TextStyle(
+                    color:
+                        sortType == 0
+                            ? const Color(0xFF001F55)
+                            : const Color(0xFFB6B6B6),
+                    fontSize: 12,
+                    fontFamily:
+                        sortType == 0
+                            ? 'Pretendard-Light'
+                            : 'Pretendard-ExtraLight',
+                    letterSpacing: -0.28,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 12),
-          InkWell(
+          GestureDetector(
             onTap: () => onSortTypeChanged(1),
-            child: Text(
-              '• 추천순',
-              style: TextStyle(
-                color: sortType == 1 ? Colors.red : Colors.grey[400],
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start, // 점도 상단 정렬로 변경
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.only(top: 3), // 약간의 여백 추가
+                  decoration: ShapeDecoration(
+                    color:
+                        sortType == 1
+                            ? const Color(0xFF5D9EFF)
+                            : const Color(0xFFB6B6B6),
+                    shape: const OvalBorder(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '도움이 된 순',
+                  style: TextStyle(
+                    color:
+                        sortType == 1
+                            ? const Color(0xFF001F55)
+                            : const Color(0xFFB6B6B6),
+                    fontSize: 12,
+                    fontFamily:
+                        sortType == 1
+                            ? 'Pretendard-Light'
+                            : 'Pretendard-ExtraLight',
+                    letterSpacing: -0.28,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -138,21 +241,7 @@ class WritePostSection extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '학습 정보를 인증하고 공유하고',
-                    style: TextStyle(color: Colors.grey[800], fontSize: 12),
-                  ),
-                  Text(
-                    'XXXXXXXX',
-                    style: TextStyle(color: Colors.grey[800], fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
+            const Spacer(),
             GestureDetector(
               onTap: onWriteButtonPressed,
               child: Container(
@@ -181,11 +270,15 @@ class WritePostSection extends StatelessWidget {
 }
 
 // 검색바 위젯
-class SearchBar extends StatelessWidget {
-  final TextEditingController? controller;
-  final Function(String)? onSearch;
+class SearchWidget extends StatelessWidget {
+  final TextEditingController controller;
+  final Function(String) onSearch;
 
-  const SearchBar({super.key, this.controller, this.onSearch});
+  const SearchWidget({
+    super.key,
+    required this.controller,
+    required this.onSearch,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +291,10 @@ class SearchBar extends StatelessWidget {
         child: TextField(
           controller: controller,
           textAlignVertical: TextAlignVertical.center,
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(
+            fontSize: 14,
+            fontFamily: 'Pretendard-Regular',
+          ),
           decoration: FeedStyles.searchInputDecoration,
           onSubmitted: onSearch,
         ),
